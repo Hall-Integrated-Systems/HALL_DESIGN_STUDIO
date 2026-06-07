@@ -99,6 +99,8 @@ export function RightPropertiesPanel() {
 
       {selectedObject.kind === 'image' && selectedObject.imagePlane ? (
         <ImagePlanePanel object={selectedObject} onUpdate={updateObject} />
+      ) : selectedObject.kind === 'annotation' && selectedObject.annotation ? (
+        <AnnotationPanel object={selectedObject} onUpdate={updateObject} />
       ) : (
         <MaterialPanel object={selectedObject} onUpdateMaterial={updateObjectMaterial} />
       )}
@@ -112,6 +114,132 @@ export function RightPropertiesPanel() {
         </button>
       </div>
     </aside>
+  );
+}
+
+function AnnotationPanel({ object, onUpdate }: { object: StudioObject; onUpdate: (id: string, patch: Partial<StudioObject>) => void }) {
+  const annotation = object.annotation;
+  if (!annotation) return null;
+
+  const updateAnnotation = (patch: Partial<typeof annotation>) => {
+    onUpdate(object.id, { annotation: { ...annotation, ...patch } });
+  };
+
+  const setPointValue = (field: 'start' | 'end', axisIndex: number, rawValue: string) => {
+    const value = Number(rawValue);
+    if (!Number.isFinite(value)) return;
+    const next = [...annotation[field]] as Vec3;
+    next[axisIndex] = value;
+    updateAnnotation({ [field]: next });
+  };
+
+  return (
+    <section className="panel-section">
+      <h3>Annotation</h3>
+      {annotation.kind !== 'marker-dot' && (
+        <label className="field">
+          <span>{annotation.kind === 'dimension-line' ? 'Label Text' : 'Text'}</span>
+          <input value={annotation.text} onChange={(event) => updateAnnotation({ text: event.target.value })} />
+        </label>
+      )}
+      <label className="field color-field">
+        <span>Color</span>
+        <input type="color" value={annotation.color} onChange={(event) => updateAnnotation({ color: event.target.value })} />
+      </label>
+      <RangeField
+        label={annotation.kind === 'marker-dot' ? 'Dot Size' : 'Font Size'}
+        value={annotation.fontSize}
+        min={0.05}
+        max={0.5}
+        step={0.01}
+        onChange={(event) => updateAnnotation({ fontSize: Number(event.target.value) })}
+      />
+
+      {(annotation.kind === 'text-label' || annotation.kind === 'arrow-callout') && (
+        <>
+          <label className="switch-field">
+            <input
+              type="checkbox"
+              checked={annotation.backgroundEnabled}
+              onChange={(event) => updateAnnotation({ backgroundEnabled: event.target.checked })}
+            />
+            Background
+          </label>
+          <label className="switch-field">
+            <input type="checkbox" checked={annotation.faceCamera} onChange={(event) => updateAnnotation({ faceCamera: event.target.checked })} />
+            Face camera
+          </label>
+        </>
+      )}
+
+      {annotation.kind === 'dimension-line' && (
+        <>
+          <AnnotationPointEditor label="Start" point={annotation.start} onChange={(axis, value) => setPointValue('start', axis, value)} />
+          <AnnotationPointEditor label="End" point={annotation.end} onChange={(axis, value) => setPointValue('end', axis, value)} />
+          <label className="switch-field">
+            <input type="checkbox" checked={annotation.autoLength} onChange={(event) => updateAnnotation({ autoLength: event.target.checked })} />
+            Auto-length label
+          </label>
+          <RangeField
+            label="Thickness"
+            value={annotation.lineThickness}
+            min={0.005}
+            max={0.08}
+            step={0.005}
+            onChange={(event) => updateAnnotation({ lineThickness: Number(event.target.value) })}
+          />
+        </>
+      )}
+
+      {annotation.kind === 'arrow-callout' && (
+        <>
+          <RangeField
+            label="Length"
+            value={annotation.arrowLength}
+            min={0.2}
+            max={3}
+            step={0.05}
+            onChange={(event) => updateAnnotation({ arrowLength: Number(event.target.value) })}
+          />
+          <label className="field">
+            <span>Direction</span>
+            <input type="number" step={5} value={annotation.arrowAngle} onChange={(event) => updateAnnotation({ arrowAngle: Number(event.target.value) })} />
+          </label>
+          <RangeField
+            label="Thickness"
+            value={annotation.lineThickness}
+            min={0.005}
+            max={0.08}
+            step={0.005}
+            onChange={(event) => updateAnnotation({ lineThickness: Number(event.target.value) })}
+          />
+        </>
+      )}
+    </section>
+  );
+}
+
+function AnnotationPointEditor({
+  label,
+  point,
+  onChange,
+}: {
+  label: string;
+  point: Vec3;
+  onChange: (axisIndex: number, rawValue: string) => void;
+}) {
+  return (
+    <section className="panel-section nested-section">
+      <h3>{label}</h3>
+      <div className="vector-grid">
+        {axes.map((axis, index) => (
+          <label key={axis} className="field compact-field">
+            <span>{axis}</span>
+            <input type="number" step={0.1} value={Number(point[index].toFixed(3))} onChange={(event) => onChange(index, event.target.value)} />
+          </label>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -272,6 +400,7 @@ function ObjectList({
 }
 
 function getObjectTypeLabel(object: StudioObject) {
+  if (object.kind === 'annotation') return 'Annotation';
   if (object.assetCategory) return object.assetCategory;
   if (object.kind === 'model') return 'Imported Model';
   if (object.kind === 'asset') return 'Asset';
@@ -307,12 +436,26 @@ function VectorEditor({
   );
 }
 
-function RangeField({ label, value, onChange }: { label: string; value: number; onChange: (event: ChangeEvent<HTMLInputElement>) => void }) {
+function RangeField({
+  label,
+  value,
+  min = 0,
+  max = 1,
+  step = 0.01,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
   return (
     <label className="field range-field">
       <span>{label}</span>
-      <input type="range" min="0" max="1" step="0.01" value={value} onChange={onChange} />
-      <output>{value.toFixed(2)}</output>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={onChange} />
+      <output>{value.toFixed(step < 0.01 ? 3 : 2)}</output>
     </label>
   );
 }

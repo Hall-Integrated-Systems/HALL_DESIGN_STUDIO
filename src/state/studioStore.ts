@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type {
+  AnnotationKind,
   BackgroundMode,
   CameraPreset,
   FrameTarget,
@@ -52,6 +53,7 @@ interface StudioState {
   addPrimitive: (kind: PrimitiveKind) => void;
   addModel: (fileName: string, modelDataUrl: string) => void;
   addImagePlane: (fileName: string, imageDataUrl: string, width: number, height: number) => void;
+  addAnnotation: (kind: AnnotationKind) => void;
   addBuiltInAsset: (assetId: string) => void;
   addImageDecalAsset: (assetId: string) => void;
   addImportedAsset: (assetId: string) => void;
@@ -93,6 +95,13 @@ const DEFAULT_IMAGE_MATERIAL = {
   opacity: 1,
 };
 
+const DEFAULT_ANNOTATION_MATERIAL = {
+  color: '#ffffff',
+  roughness: 0.5,
+  metalness: 0,
+  opacity: 1,
+};
+
 const makeId = () => crypto.randomUUID();
 
 const offsetPosition = (position: Vec3): Vec3 => [position[0] + 0.35, position[1], position[2] + 0.35];
@@ -102,6 +111,13 @@ const primitiveNames: Record<PrimitiveKind, string> = {
   cylinder: 'Cylinder',
   sphere: 'Sphere',
   plane: 'Plane',
+};
+
+const annotationNames: Record<AnnotationKind, string> = {
+  'text-label': 'Text Label',
+  'arrow-callout': 'Arrow Callout',
+  'dimension-line': 'Dimension Line',
+  'marker-dot': 'Marker Dot',
 };
 
 const DEFAULT_SETTINGS: StudioSettings = {
@@ -152,6 +168,22 @@ const withObjectDefaults = (object: StudioObject): StudioObject => ({
         preserveAspectRatio: object.imagePlane.preserveAspectRatio ?? true,
         tintColor: object.imagePlane.tintColor ?? '#ffffff',
         placeholder: object.imagePlane.placeholder ?? false,
+      }
+    : undefined,
+  annotation: object.annotation
+    ? {
+        kind: object.annotation.kind ?? 'text-label',
+        text: object.annotation.text ?? 'Label',
+        color: object.annotation.color ?? '#ffffff',
+        fontSize: object.annotation.fontSize ?? 0.16,
+        backgroundEnabled: object.annotation.backgroundEnabled ?? false,
+        faceCamera: object.annotation.faceCamera ?? false,
+        start: object.annotation.start ?? [-0.6, 0, 0],
+        end: object.annotation.end ?? [0.6, 0, 0],
+        lineThickness: object.annotation.lineThickness ?? 0.025,
+        arrowLength: object.annotation.arrowLength ?? 1,
+        arrowAngle: object.annotation.arrowAngle ?? 0,
+        autoLength: object.annotation.autoLength ?? true,
       }
     : undefined,
   parts: object.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
@@ -248,6 +280,38 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       selectedObjectId: object.id,
       isDirty: true,
     }));
+  },
+
+  addAnnotation: (kind) => {
+    const count = get().objects.filter((object) => object.annotation?.kind === kind).length + 1;
+    const baseName = annotationNames[kind];
+    const object: StudioObject = {
+      id: makeId(),
+      name: `${baseName} ${count}`,
+      kind: 'annotation',
+      position: [0, 1.2, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      material: { ...DEFAULT_ANNOTATION_MATERIAL },
+      annotation: {
+        kind,
+        text: kind === 'dimension-line' ? '' : baseName,
+        color: kind === 'marker-dot' ? '#00aeef' : '#ffffff',
+        fontSize: kind === 'marker-dot' ? 0.12 : 0.16,
+        backgroundEnabled: kind === 'text-label',
+        faceCamera: kind === 'text-label' || kind === 'arrow-callout',
+        start: [-0.6, 0, 0],
+        end: [0.6, 0, 0],
+        lineThickness: 0.025,
+        arrowLength: 1,
+        arrowAngle: 0,
+        autoLength: kind === 'dimension-line',
+      },
+      locked: false,
+      visible: true,
+    };
+
+    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
   },
 
   addBuiltInAsset: (assetId) => {
@@ -418,6 +482,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       position: offsetPosition(selected.position),
       material: { ...selected.material },
       imagePlane: selected.imagePlane ? { ...selected.imagePlane } : undefined,
+      annotation: selected.annotation ? { ...selected.annotation } : undefined,
       parts: selected.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
     };
     set((state) => ({ objects: [...state.objects, duplicate], selectedObjectId: duplicate.id, isDirty: true }));

@@ -1,6 +1,6 @@
 import { ChangeEvent, useRef } from 'react';
 import { useStudioStore } from '../state/studioStore';
-import type { PrimitiveKind } from '../types/studioTypes';
+import type { AnnotationKind, PrimitiveKind } from '../types/studioTypes';
 import { assetCategories, builtInAssets, imageDecalAssets } from '../config/assets';
 
 const primitiveButtons: Array<{ kind: PrimitiveKind; label: string }> = [
@@ -10,10 +10,18 @@ const primitiveButtons: Array<{ kind: PrimitiveKind; label: string }> = [
   { kind: 'plane', label: 'Plane' },
 ];
 
+const annotationButtons: Array<{ kind: AnnotationKind; label: string }> = [
+  { kind: 'text-label', label: 'Text Label' },
+  { kind: 'arrow-callout', label: 'Arrow Callout' },
+  { kind: 'dimension-line', label: 'Dimension Line' },
+  { kind: 'marker-dot', label: 'Marker / Dot' },
+];
+
 export function LeftToolbar() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const addPrimitive = useStudioStore((state) => state.addPrimitive);
+  const addAnnotation = useStudioStore((state) => state.addAnnotation);
   const addModel = useStudioStore((state) => state.addModel);
   const addImagePlane = useStudioStore((state) => state.addImagePlane);
   const addBuiltInAsset = useStudioStore((state) => state.addBuiltInAsset);
@@ -66,6 +74,17 @@ export function LeftToolbar() {
           </button>
         ))}
       </div>
+      </section>
+
+      <section className="toolbar-section">
+        <h2>Annotations</h2>
+        <div className="toolbar-group">
+          {annotationButtons.map((button) => (
+            <button key={button.kind} type="button" onClick={() => addAnnotation(button.kind)}>
+              {button.label}
+            </button>
+          ))}
+        </div>
       </section>
 
       <button type="button" className="import-button" onClick={() => importInputRef.current?.click()}>

@@ -28,6 +28,7 @@ npm run build
 - Import `.glb` or `.gltf` files from the import button.
 - Import `.png`, `.jpg`, `.jpeg`, or `.webp` images as flat image planes.
 - Insert reusable assets from the Asset Library in the left toolbar.
+- Add annotation overlays from the Annotations section in the left toolbar.
 - Use built-in starter assets such as H Logo Placeholder, Product Base Plate, Simple Display Stand, Wall Mount Plate, Small Bracket, Label Tag, and Screw Boss Placeholder.
 - Reinsert models from the Imported Models asset list after importing them once in the current session.
 - Reinsert imported images from the Image / Decal asset list after importing them once in the current session.
@@ -37,6 +38,7 @@ npm run build
 - Use the transform mode selector to move, rotate, or scale the selected object.
 - Edit position, rotation, scale, color, roughness, metalness, and opacity in the right properties panel.
 - For image planes, edit opacity, double-sided rendering, aspect-ratio preservation, and tint color.
+- For annotations, edit text, color, size, line points, arrow length/direction, face-camera behavior, and dimension labels where applicable.
 - Use HIS brand color presets for quick, consistent prototype and product mockup colors.
 - Use material presets such as matte plastic, satin metal, rubber black, clear plastic, prototype gray, and premium black.
 - Add a project title and notes so saved project JSON remembers what the render is for.
@@ -99,6 +101,21 @@ Transparent PNG logos keep their alpha channel, making them useful for HIS logo 
 
 Image planes preserve aspect ratio by default by sizing the inserted plane from the source image dimensions. The Preserve aspect ratio toggle can restore the imported image ratio based on the current height scale. For decals, rotate and position the plane slightly in front of the target face to avoid visual overlap.
 
+## Annotations
+
+Use the Annotations section in the left toolbar to add:
+
+- Text Label for simple labels and short explanatory notes.
+- Arrow Callout for pointing at product features.
+- Dimension Line for lightweight visual size callouts.
+- Marker / Dot for highlighting a point or feature.
+
+Annotations are regular scene objects: they can be selected, moved, rotated, scaled, duplicated, deleted, locked, hidden, saved, loaded, and exported. High-resolution PNG export includes annotations because they render inside the Three.js scene.
+
+Text labels support text content, font size, color, optional background, and optional face-camera behavior. Arrow callouts support text, color, arrow length, direction, line thickness, background, and optional face-camera behavior. Dimension lines support editable start/end points, optional auto-length text, custom label text, color, and line thickness. Marker dots support color and size.
+
+For product concept and callout renders, start with a product template, frame the object, add labels or arrows near key features, then export a `1920x1080` banner or `2400x2400` square image. For transparent compositing, use a transparent scene or Photoshop Cutout preset before adding annotations.
+
 ## Project Templates
 
 New From Template creates a fresh scene from a centralized project template. If the scene already has objects or unsaved changes, Hall Product Studio asks for confirmation before replacing the current scene.
@@ -137,13 +154,15 @@ Imported models are auto-centered and normalized to a practical staging size. Fo
 
 Fixed-size screenshot exports render the WebGL scene at the chosen output resolution before downloading the PNG. Very large or complex models can take a moment to export at `2400x2400`, depending on the GPU and browser.
 
-The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.6.
+The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.7.
 
 Built-in assets are approximate staging helpers, not manufacturing geometry. Imported model and imported image history are not persisted as reusable libraries across browser reloads unless the asset has been placed in a saved project.
 
 Project templates are starting points. They can insert built-in assets and configure the scene, but they do not preserve custom local imported model history across reloads.
 
 Very large images consume browser memory and can make project JSON files heavy because image data is embedded as data URLs. Use web-sized PNG/JPG/WEBP assets for labels and logos when practical.
+
+Annotation dimensions are visual callouts, not CAD measurements. Auto-length uses the scene-unit distance between local start and end points. Annotation text uses real-time WebGL text rendering, so exact typography may differ from desktop publishing tools.
 
 ## Layout Verification
 

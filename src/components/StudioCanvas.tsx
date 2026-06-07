@@ -1,11 +1,12 @@
-import { Grid, Html, OrbitControls, useGLTF } from '@react-three/drei';
+import { Grid, Html, OrbitControls, Text, useGLTF } from '@react-three/drei';
 import { Canvas, ThreeEvent, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Mesh, MeshStandardMaterial, Object3D } from 'three';
+import type { ReactNode } from 'react';
+import type { Mesh, MeshStandardMaterial, Object3D, Quaternion } from 'three';
 import { Box3, Box3Helper, Color, DoubleSide, FrontSide, Group, TextureLoader, Vector2, Vector3 } from 'three';
 import { ObjectTransformControls } from './ObjectTransformControls';
 import { useStudioStore } from '../state/studioStore';
-import type { CameraPreset, PrimitiveKind, StudioAssetPart, StudioMaterial, StudioObject } from '../types/studioTypes';
+import type { AnnotationData, CameraPreset, PrimitiveKind, StudioAssetPart, StudioMaterial, StudioObject, Vec3 } from '../types/studioTypes';
 import { downloadDataUrl, getScreenshotDimensions } from '../utils/exportScreenshot';
 
 export function StudioCanvas() {
@@ -165,10 +166,137 @@ function ObjectGeometry({ object, shadowsEnabled }: { object: StudioObject; shad
     return <ImagePlane object={object} shadowsEnabled={shadowsEnabled} />;
   }
 
+  if (object.kind === 'annotation' && object.annotation) {
+    return <AnnotationObject annotation={object.annotation} />;
+  }
+
   return (
     <mesh castShadow={shadowsEnabled} receiveShadow={shadowsEnabled}>
       <PrimitiveGeometry kind={object.kind as PrimitiveKind} />
       <meshStandardMaterial {...materialProps} />
+    </mesh>
+  );
+}
+
+function AnnotationObject({ annotation }: { annotation: AnnotationData }) {
+  if (annotation.kind === 'text-label') return <AnnotationLabel annotation={annotation} />;
+  if (annotation.kind === 'arrow-callout') return <ArrowCallout annotation={annotation} />;
+  if (annotation.kind === 'dimension-line') return <DimensionLine annotation={annotation} />;
+  return <MarkerDot annotation={annotation} />;
+}
+
+function AnnotationLabel({ annotation }: { annotation: AnnotationData }) {
+  return (
+    <BillboardGroup enabled={annotation.faceCamera}>
+      {annotation.backgroundEnabled && <LabelBackground text={annotation.text} fontSize={annotation.fontSize} />}
+      <Text fontSize={annotation.fontSize} color={annotation.color} anchorX="center" anchorY="middle">
+        {annotation.text}
+      </Text>
+    </BillboardGroup>
+  );
+}
+
+function ArrowCallout({ annotation }: { annotation: AnnotationData }) {
+  const angle = (annotation.arrowAngle * Math.PI) / 180;
+  const end: Vec3 = [Math.cos(angle) * annotation.arrowLength, Math.sin(angle) * annotation.arrowLength, 0];
+  const labelPosition: Vec3 = [end[0] * 0.5, end[1] + annotation.fontSize * 1.4, 0];
+
+  return (
+    <BillboardGroup enabled={annotation.faceCamera}>
+      <CylinderBetween start={[0, 0, 0]} end={end} color={annotation.color} thickness={annotation.lineThickness} />
+      <ArrowHead position={end} angle={annotation.arrowAngle} color={annotation.color} size={annotation.lineThickness * 7} />
+      {annotation.backgroundEnabled && <LabelBackground text={annotation.text} fontSize={annotation.fontSize} position={labelPosition} />}
+      <Text position={labelPosition} fontSize={annotation.fontSize} color={annotation.color} anchorX="center" anchorY="middle">
+        {annotation.text}
+      </Text>
+    </BillboardGroup>
+  );
+}
+
+function DimensionLine({ annotation }: { annotation: AnnotationData }) {
+  const start = new Vector3(...annotation.start);
+  const end = new Vector3(...annotation.end);
+  const mid = start.clone().add(end).multiplyScalar(0.5);
+  const length = start.distanceTo(end);
+  const label = annotation.autoLength && annotation.text.trim().length === 0 ? `${length.toFixed(2)} u` : annotation.text || `${length.toFixed(2)} u`;
+
+  return (
+    <group>
+      <CylinderBetween start={annotation.start} end={annotation.end} color={annotation.color} thickness={annotation.lineThickness} />
+      <mesh position={annotation.start}>
+        <sphereGeometry args={[annotation.lineThickness * 2.2, 16, 12]} />
+        <meshBasicMaterial color={annotation.color} />
+      </mesh>
+      <mesh position={annotation.end}>
+        <sphereGeometry args={[annotation.lineThickness * 2.2, 16, 12]} />
+        <meshBasicMaterial color={annotation.color} />
+      </mesh>
+      <Text position={[mid.x, mid.y + annotation.fontSize * 1.25, mid.z]} fontSize={annotation.fontSize} color={annotation.color} anchorX="center" anchorY="middle">
+        {label}
+      </Text>
+    </group>
+  );
+}
+
+function MarkerDot({ annotation }: { annotation: AnnotationData }) {
+  return (
+    <mesh>
+      <sphereGeometry args={[annotation.fontSize, 32, 16]} />
+      <meshBasicMaterial color={annotation.color} />
+    </mesh>
+  );
+}
+
+function LabelBackground({ text, fontSize, position = [0, 0, -0.01] as Vec3 }: { text: string; fontSize: number; position?: Vec3 }) {
+  const width = Math.max(text.length * fontSize * 0.62, fontSize * 2.2);
+  const height = fontSize * 1.75;
+
+  return (
+    <mesh position={position}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial color="#0b0f14" opacity={0.72} transparent side={DoubleSide} />
+    </mesh>
+  );
+}
+
+function BillboardGroup({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  const groupRef = useRef<Group | null>(null);
+  const camera = useThree((state) => state.camera);
+
+  useFrame(() => {
+    if (enabled && groupRef.current) {
+      groupRef.current.quaternion.copy(camera.quaternion);
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+}
+
+function CylinderBetween({ start, end, color, thickness }: { start: Vec3; end: Vec3; color: string; thickness: number }) {
+  const transform = useMemo(() => {
+    const startVector = new Vector3(...start);
+    const endVector = new Vector3(...end);
+    const direction = endVector.clone().sub(startVector);
+    const length = Math.max(direction.length(), 0.0001);
+    const midpoint = startVector.clone().add(endVector).multiplyScalar(0.5);
+    const quaternion = new Group().quaternion;
+    quaternion.setFromUnitVectors(new Vector3(0, 1, 0), direction.normalize());
+    return { length, midpoint, quaternion: quaternion.clone() as Quaternion };
+  }, [end, start]);
+
+  return (
+    <mesh position={transform.midpoint} quaternion={transform.quaternion}>
+      <cylinderGeometry args={[thickness, thickness, transform.length, 16]} />
+      <meshBasicMaterial color={color} />
+    </mesh>
+  );
+}
+
+function ArrowHead({ position, angle, color, size }: { position: Vec3; angle: number; color: string; size: number }) {
+  return (
+    <mesh position={position} rotation={[0, 0, (angle * Math.PI) / 180 - Math.PI / 2]}>
+      <coneGeometry args={[size, size * 2.2, 24]} />
+      <meshBasicMaterial color={color} />
     </mesh>
   );
 }

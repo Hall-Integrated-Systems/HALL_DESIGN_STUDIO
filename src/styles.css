@@ -468,6 +468,10 @@ button.active,
   margin-top: 18px;
 }
 
+.nested-section {
+  margin-top: 12px;
+}
+
 .panel-section h3 {
   margin-bottom: 10px;
   color: #b9c7d7;

@@ -2,7 +2,9 @@ export type PrimitiveKind = 'cube' | 'cylinder' | 'sphere' | 'plane';
 
 export type AssetCategory = 'Logos' | 'Product Parts' | 'Fixtures / Stands' | 'Background Props' | 'Image / Decal' | 'Imported Models';
 
-export type StudioObjectKind = PrimitiveKind | 'model' | 'asset' | 'image';
+export type StudioObjectKind = PrimitiveKind | 'model' | 'asset' | 'image' | 'annotation';
+
+export type AnnotationKind = 'text-label' | 'arrow-callout' | 'dimension-line' | 'marker-dot';
 
 export type TransformMode = 'translate' | 'rotate' | 'scale';
 
@@ -50,10 +52,26 @@ export interface StudioObject {
   scale: Vec3;
   material: StudioMaterial;
   imagePlane?: ImagePlaneData;
+  annotation?: AnnotationData;
   locked: boolean;
   visible: boolean;
   modelDataUrl?: string;
   fileName?: string;
+}
+
+export interface AnnotationData {
+  kind: AnnotationKind;
+  text: string;
+  color: string;
+  fontSize: number;
+  backgroundEnabled: boolean;
+  faceCamera: boolean;
+  start: Vec3;
+  end: Vec3;
+  lineThickness: number;
+  arrowLength: number;
+  arrowAngle: number;
+  autoLength: boolean;
 }
 
 export interface ImagePlaneData {
