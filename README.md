@@ -69,6 +69,8 @@ npm run build
 - Save custom render/export setups as browser-local render presets from the Scene menu.
 - Choose a screenshot output size, edit the export filename, then export a PNG from the top bar.
 - Reset the camera from the top bar.
+- Use Help for app version, live site URL, supported imports, export size reminders, storage guidance, and shortcuts.
+- Use keyboard shortcuts: Delete removes the selected object, Ctrl/Cmd+S saves to browser, Ctrl/Cmd+E exports PNG, and Escape deselects.
 
 ## Export Workflow
 
@@ -110,6 +112,12 @@ The Scene menu can save the current render setup as a custom browser-local prese
 - camera distance
 
 Use custom presets for repeatable website, Autodesk application, review, or cutout workflows that differ from the built-in product render presets. Custom render presets are local to the current browser profile.
+
+## Status and Error Handling
+
+Hall Product Studio shows small status messages for important actions such as project save/load, browser save warnings, autosave restore, import failures, and PNG export completion. Failed imports are checked before insertion so unsupported file types, broken or incomplete GLB/GLTF models, oversized images, and damaged project JSON files show friendlier messages.
+
+Destructive or scene-replacing actions ask for confirmation when appropriate, including clearing a scene, deleting browser projects, overwriting a browser project, and loading a project while unsaved work exists.
 
 ## Asset Library
 
@@ -184,7 +192,7 @@ Imported models are auto-centered and normalized to a practical staging size. Fo
 
 Fixed-size screenshot exports render the WebGL scene at the chosen output resolution before downloading the PNG. Very large or complex models can take a moment to export at `2400x2400`, depending on the GPU and browser.
 
-The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.8.1.
+The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.9.
 
 Built-in assets are approximate staging helpers, not manufacturing geometry. Imported model and imported image history are not persisted as reusable libraries across browser reloads unless the asset has been placed in a saved project.
 
@@ -195,6 +203,20 @@ Very large images consume browser memory and can make project JSON files heavy b
 Annotation dimensions are visual callouts, not CAD measurements. Auto-length uses the scene-unit distance between local start and end points. Annotation text uses real-time WebGL text rendering, so exact typography may differ from desktop publishing tools.
 
 Browser-saved projects and custom render presets are local to the current browser and device. Use JSON export for backups, moving work between machines, or preserving work before clearing browser data.
+
+## QA Checklist
+
+Before shipping a release, verify:
+
+- Import a `.glb` model and confirm it appears, selects, transforms, and exports.
+- Import a transparent PNG and confirm alpha renders correctly as an image plane.
+- Try an unsupported import file and confirm a friendly failure message appears.
+- Add a text label or arrow annotation and confirm it appears in PNG export.
+- Save a project to browser storage, reload, and reopen it from Recent Projects.
+- Export a JSON project, clear the scene, reload the JSON, and confirm objects return.
+- Make an unsaved scene change, reload, and confirm the autosave restore prompt works.
+- Export a PNG and confirm the completion status message appears.
+- Verify the live deployment at `https://studio.hallintegratedsystems.com`.
 
 ## Layout Verification
 

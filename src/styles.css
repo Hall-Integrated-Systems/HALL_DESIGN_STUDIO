@@ -695,6 +695,45 @@ button.active,
   color: #dce6f1;
 }
 
+.toast-host {
+  position: absolute;
+  z-index: 30;
+  right: 18px;
+  bottom: 18px;
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 36px));
+}
+
+.toast {
+  min-height: 0;
+  padding: 10px 12px;
+  border-radius: 7px;
+  text-align: left;
+  line-height: 1.35;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
+}
+
+.toast-success {
+  border-color: #3f7d5c;
+  background: #153423;
+}
+
+.toast-info {
+  border-color: #4c6d8f;
+  background: #152536;
+}
+
+.toast-warning {
+  border-color: #8e7341;
+  background: #3b2b13;
+}
+
+.toast-error {
+  border-color: #9d4d59;
+  background: #421a22;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

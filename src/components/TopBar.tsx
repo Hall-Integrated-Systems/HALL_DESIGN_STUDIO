@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { createProject, downloadProject, estimateProjectBytes, formatBytes, readProjectFile } from '../utils/projectSerialization';
 import { useStudioStore } from '../state/studioStore';
 import type { BackgroundMode, CameraPreset, ProjectTemplateId, ScreenshotSize } from '../types/studioTypes';
-import { productRenderPresets, sceneTemplates } from '../config/presets';
+import { APP_VERSION, productRenderPresets, sceneTemplates } from '../config/presets';
 import { projectTemplates } from '../config/projectTemplates';
 import {
   clearAutosaveDraft,
@@ -34,6 +34,7 @@ const screenshotSizes: Array<{ value: ScreenshotSize; label: string }> = [
 ];
 
 const BROWSER_PROJECT_WARNING_BYTES = 5 * 1024 * 1024;
+const LIVE_SITE_URL = 'https://studio.hallintegratedsystems.com';
 const formatScreenshotSize = (value: ScreenshotSize) => screenshotSizes.find((size) => size.value === value)?.label ?? value;
 
 export function TopBar() {
@@ -53,6 +54,8 @@ export function TopBar() {
   const clearScene = useStudioStore((state) => state.clearScene);
   const markSaved = useStudioStore((state) => state.markSaved);
   const setActiveBrowserProjectId = useStudioStore((state) => state.setActiveBrowserProjectId);
+  const deleteSelected = useStudioStore((state) => state.deleteSelected);
+  const selectObject = useStudioStore((state) => state.selectObject);
   const setCameraPreset = useStudioStore((state) => state.setCameraPreset);
   const setCameraDistance = useStudioStore((state) => state.setCameraDistance);
   const requestFrame = useStudioStore((state) => state.requestFrame);
@@ -62,6 +65,7 @@ export function TopBar() {
   const updateSettings = useStudioStore((state) => state.updateSettings);
   const updateExportFileName = useStudioStore((state) => state.updateExportFileName);
   const resetCamera = useStudioStore((state) => state.resetCamera);
+  const pushToast = useStudioStore((state) => state.pushToast);
   const exportFileName = settings.exportFileNameEdited ? settings.exportFileName : selectedObject?.name || 'hall-product-studio-render';
   const [browserProjects, setBrowserProjects] = useState<BrowserProjectRecord[]>([]);
   const [customPresets, setCustomPresets] = useState<CustomRenderPreset[]>([]);
@@ -76,7 +80,9 @@ export function TopBar() {
       setBrowserProjects(projects);
       setCustomPresets(presets);
     } catch (error) {
-      setStorageStatus(error instanceof Error ? error.message : 'Browser storage is not available.');
+      const message = error instanceof Error ? error.message : 'Browser storage is not available.';
+      setStorageStatus(message);
+      pushToast(message, 'error');
     }
   };
 
@@ -97,7 +103,7 @@ export function TopBar() {
         const restoredAt = new Date(draft.savedAt).toLocaleString();
         if (window.confirm(`A browser autosave draft from ${restoredAt} is available. Restore it?`)) {
           loadProject(draft.project, null);
-          setStorageStatus('Autosave draft restored.');
+          pushToast('Autosave draft restored.', 'success');
         } else {
           clearAutosaveDraft();
         }
@@ -112,12 +118,49 @@ export function TopBar() {
 
     const timer = window.setTimeout(() => {
       saveAutosaveDraft(buildCurrentProject()).catch(() => {
-        setStorageStatus('Autosave could not write to browser storage.');
+        pushToast('Autosave could not write to browser storage.', 'warning');
       });
     }, 1000);
 
     return () => window.clearTimeout(timer);
   }, [objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance, isDirty]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return;
+
+      const hasModifier = event.ctrlKey || event.metaKey;
+      const key = event.key.toLowerCase();
+
+      if (event.key === 'Escape') {
+        selectObject(null);
+        return;
+      }
+
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (selectedObjectId) {
+          event.preventDefault();
+          deleteSelected();
+          pushToast('Selected object deleted.', 'info');
+        }
+        return;
+      }
+
+      if (hasModifier && key === 's') {
+        event.preventDefault();
+        handleSaveBrowserProject(!activeBrowserProjectId);
+        return;
+      }
+
+      if (hasModifier && key === 'e') {
+        event.preventDefault();
+        requestExportScreenshot();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
 
   const confirmReset = (actionLabel: string) => {
     if (objects.length === 0 && !isDirty) return true;
@@ -129,12 +172,18 @@ export function TopBar() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (isDirty && !window.confirm('You have unsaved changes. Load this JSON project and replace the current scene?')) {
+      event.target.value = '';
+      return;
+    }
+
     try {
       loadProject(await readProjectFile(file), null);
       setActiveBrowserProjectId(null);
       clearAutosaveDraft();
+      pushToast(`Loaded ${file.name}.`, 'success');
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Could not load project.');
+      pushToast(error instanceof Error ? error.message : 'Failed JSON load. Choose a compatible Hall Product Studio project file.', 'error');
     } finally {
       event.target.value = '';
     }
@@ -146,15 +195,16 @@ export function TopBar() {
 
     if (projectBytes <= BROWSER_PROJECT_WARNING_BYTES) return true;
 
-    return window.confirm(
-      `This project is ${formatBytes(projectBytes)} as JSON. Large image planes or embedded models can use browser storage quickly. Export a JSON file as your backup instead of relying only on browser storage. Continue saving to this browser?`,
-    );
+    const message = `This project is ${formatBytes(projectBytes)} as JSON. Large image planes or embedded models can use browser storage quickly. Export a JSON file as your backup instead of relying only on browser storage.`;
+    pushToast(message, 'warning');
+    return window.confirm(`${message} Continue saving to this browser?`);
   };
 
   const handleDownloadProject = () => {
     downloadProject(objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
     markSaved();
     clearAutosaveDraft();
+    pushToast('Project JSON saved.', 'success');
   };
 
   const handleSaveBrowserProject = async (saveAs = false) => {
@@ -164,6 +214,8 @@ export function TopBar() {
       const project = buildCurrentProject();
       const existingId = saveAs ? null : activeBrowserProjectId;
       const existing = existingId ? await getBrowserProject(existingId) : undefined;
+      if (existing && !window.confirm(`Overwrite browser project "${existing.title}"?`)) return;
+
       const title =
         saveAs || !existing
           ? window.prompt('Browser project name', projectTitle.trim() || 'Untitled Product Render')?.trim()
@@ -178,8 +230,9 @@ export function TopBar() {
       await clearAutosaveDraft();
       await refreshBrowserData();
       setStorageStatus(`Saved "${record.title}" to this browser.`);
+      pushToast(`Saved "${record.title}" to this browser.`, 'success');
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Could not save to browser storage.');
+      pushToast(error instanceof Error ? error.message : 'Could not save to browser storage.', 'error');
     }
   };
 
@@ -189,6 +242,7 @@ export function TopBar() {
     loadProject(record.project, record.id);
     await clearAutosaveDraft();
     setStorageStatus(`Opened "${record.title}".`);
+    pushToast(`Loaded "${record.title}".`, 'success');
   };
 
   const handleDeleteBrowserProject = async (record: BrowserProjectRecord) => {
@@ -197,12 +251,16 @@ export function TopBar() {
     if (activeBrowserProjectId === record.id) setActiveBrowserProjectId(null);
     await refreshBrowserData();
     setStorageStatus(`Deleted "${record.title}".`);
+    pushToast(`Deleted browser project "${record.title}".`, 'info');
   };
 
   const handleDuplicateBrowserProject = async (record: BrowserProjectRecord) => {
     const duplicate = await duplicateBrowserProject(record.id);
     await refreshBrowserData();
-    if (duplicate) setStorageStatus(`Duplicated "${record.title}".`);
+    if (duplicate) {
+      setStorageStatus(`Duplicated "${record.title}".`);
+      pushToast(`Duplicated "${record.title}".`, 'success');
+    }
   };
 
   const handleSaveCustomRenderPreset = async () => {
@@ -221,6 +279,7 @@ export function TopBar() {
     });
     await refreshBrowserData();
     setStorageStatus(`Saved render preset "${name}".`);
+    pushToast(`Saved render preset "${name}".`, 'success');
   };
 
   const handleApplyCustomRenderPreset = (preset: CustomRenderPreset) => {
@@ -239,6 +298,7 @@ export function TopBar() {
     if (!window.confirm(`Delete custom preset "${preset.name}"?`)) return;
     await deleteCustomRenderPreset(preset.id);
     await refreshBrowserData();
+    pushToast(`Deleted custom preset "${preset.name}".`, 'info');
   };
 
   return (
@@ -473,6 +533,7 @@ export function TopBar() {
               onClick={() => {
                 if (objects.length === 0 || confirmReset('Clear the scene')) {
                   clearScene();
+                  pushToast('Scene cleared.', 'info');
                 }
               }}
             >
@@ -480,6 +541,34 @@ export function TopBar() {
             </button>
           </div>
           {storageStatus ? <p className="menu-note">{storageStatus}</p> : null}
+        </MenuGroup>
+
+        <MenuGroup title="Help">
+          <section className="menu-section">
+            <h2>About</h2>
+            <p className="menu-note">Hall Product Studio v{APP_VERSION}</p>
+            <p className="menu-note">
+              Live site: <a href={LIVE_SITE_URL}>{LIVE_SITE_URL}</a>
+            </p>
+          </section>
+          <section className="menu-section">
+            <h2>Supported Imports</h2>
+            <p className="menu-note">Models: .glb and self-contained .gltf. Images: PNG, JPG/JPEG, and WEBP.</p>
+          </section>
+          <section className="menu-section">
+            <h2>Export Sizes</h2>
+            <p className="menu-note">1200 square for tiles, 1920 x 1080 for banners, and 2400 square for high-quality product images.</p>
+          </section>
+          <section className="menu-section">
+            <h2>Storage</h2>
+            <p className="menu-note">
+              Large image planes and embedded models can make browser projects heavy. Use JSON export as the backup path for important work.
+            </p>
+          </section>
+          <section className="menu-section">
+            <h2>Shortcuts</h2>
+            <p className="menu-note">Delete removes the selected object. Ctrl/Cmd+S saves to browser. Ctrl/Cmd+E exports PNG. Escape deselects.</p>
+          </section>
         </MenuGroup>
 
         <div className="quick-actions" aria-label="Quick actions">
@@ -501,6 +590,12 @@ export function TopBar() {
       <input ref={loadInputRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={handleLoadProject} />
     </header>
   );
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tagName = target.tagName.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || target.isContentEditable;
 }
 
 function MenuGroup({ title, children }: { title: string; children: ReactNode }) {

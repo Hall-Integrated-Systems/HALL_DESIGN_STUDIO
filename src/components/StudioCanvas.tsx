@@ -501,6 +501,7 @@ function HighResolutionExporter() {
   const settings = useStudioStore((state) => state.settings);
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
+  const pushToast = useStudioStore((state) => state.pushToast);
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const camera = useThree((state) => state.camera);
@@ -515,27 +516,32 @@ function HighResolutionExporter() {
     const previousAspect = 'aspect' in camera && typeof camera.aspect === 'number' ? camera.aspect : null;
     const fileName = settings.exportFileNameEdited ? settings.exportFileName : selectedObject?.name || 'hall-product-studio-render';
 
-    gl.setPixelRatio(1);
-    gl.setSize(target.width, target.height, false);
+    try {
+      gl.setPixelRatio(1);
+      gl.setSize(target.width, target.height, false);
 
-    if (previousAspect !== null && 'aspect' in camera) {
-      camera.aspect = target.width / target.height;
-      camera.updateProjectionMatrix();
+      if (previousAspect !== null && 'aspect' in camera) {
+        camera.aspect = target.width / target.height;
+        camera.updateProjectionMatrix();
+      }
+
+      gl.render(scene, camera);
+      downloadDataUrl(canvas.toDataURL('image/png'), fileName);
+      pushToast(`Exported ${target.width} x ${target.height} PNG.`, 'success');
+    } catch {
+      pushToast('PNG export failed. Try a smaller export size or reduce scene complexity.', 'error');
+    } finally {
+      gl.setSize(previousSize.x, previousSize.y, false);
+      gl.setPixelRatio(previousPixelRatio);
+
+      if (previousAspect !== null && 'aspect' in camera) {
+        camera.aspect = previousAspect;
+        camera.updateProjectionMatrix();
+      }
+
+      gl.render(scene, camera);
     }
-
-    gl.render(scene, camera);
-    downloadDataUrl(canvas.toDataURL('image/png'), fileName);
-
-    gl.setSize(previousSize.x, previousSize.y, false);
-    gl.setPixelRatio(previousPixelRatio);
-
-    if (previousAspect !== null && 'aspect' in camera) {
-      camera.aspect = previousAspect;
-      camera.updateProjectionMatrix();
-    }
-
-    gl.render(scene, camera);
-  }, [camera, exportRequestToken, gl, scene, selectedObject?.name, settings.exportFileName, settings.screenshotSize]);
+  }, [camera, exportRequestToken, gl, pushToast, scene, selectedObject?.name, settings.exportFileName, settings.exportFileNameEdited, settings.screenshotSize]);
 
   return null;
 }

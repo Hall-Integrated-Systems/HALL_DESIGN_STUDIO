@@ -43,11 +43,20 @@ export function downloadProject(
 }
 
 export async function readProjectFile(file: File): Promise<StudioProject> {
-  const text = await file.text();
-  const parsed = JSON.parse(text) as StudioProject;
+  if (!file.name.toLowerCase().endsWith('.json')) {
+    throw new Error('Unsupported file type. Load a Hall Product Studio .json project file.');
+  }
+
+  let parsed: StudioProject;
+
+  try {
+    parsed = JSON.parse(await file.text()) as StudioProject;
+  } catch {
+    throw new Error('Could not read this JSON file. It may be damaged or not valid JSON.');
+  }
 
   if (parsed.version !== 1 || !Array.isArray(parsed.objects)) {
-    throw new Error('Unsupported project file.');
+    throw new Error('This project JSON is not compatible with Hall Product Studio.');
   }
 
   return parsed;

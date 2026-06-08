@@ -7,7 +7,7 @@ import type {
   StudioSettings,
 } from '../types/studioTypes';
 
-export const APP_VERSION = '1.8.1';
+export const APP_VERSION = '1.9.0';
 
 export const brandColorPresets: Array<{ id: string; label: string; color: string }> = [
   { id: 'his-blue', label: 'HIS Blue', color: '#0057a8' },

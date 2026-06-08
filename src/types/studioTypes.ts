@@ -33,6 +33,14 @@ export type FrameTarget = 'selected' | 'all';
 
 export type Vec3 = [number, number, number];
 
+export type ToastTone = 'success' | 'info' | 'warning' | 'error';
+
+export interface StudioToast {
+  id: string;
+  message: string;
+  tone: ToastTone;
+}
+
 export interface StudioMaterial {
   color: string;
   roughness: number;

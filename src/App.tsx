@@ -2,6 +2,7 @@ import { LeftToolbar } from './components/LeftToolbar';
 import { RightPropertiesPanel } from './components/RightPropertiesPanel';
 import { StudioCanvas } from './components/StudioCanvas';
 import { TopBar } from './components/TopBar';
+import { ToastHost } from './components/ToastHost';
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
       <LeftToolbar />
       <StudioCanvas />
       <RightPropertiesPanel />
+      <ToastHost />
     </main>
   );
 }

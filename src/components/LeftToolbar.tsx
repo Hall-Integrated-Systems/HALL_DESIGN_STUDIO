@@ -1,4 +1,5 @@
 import { ChangeEvent, useRef } from 'react';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useStudioStore } from '../state/studioStore';
 import type { AnnotationKind, PrimitiveKind } from '../types/studioTypes';
 import { assetCategories, builtInAssets, imageDecalAssets } from '../config/assets';
@@ -17,6 +18,11 @@ const annotationButtons: Array<{ kind: AnnotationKind; label: string }> = [
   { kind: 'marker-dot', label: 'Marker / Dot' },
 ];
 
+const supportedModelTypes = ['glb', 'gltf'];
+const supportedImageTypes = ['png', 'jpg', 'jpeg', 'webp'];
+const maxImageBytes = 12 * 1024 * 1024;
+const maxImagePixels = 24_000_000;
+
 export function LeftToolbar() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -30,37 +36,55 @@ export function LeftToolbar() {
   const addImportedImage = useStudioStore((state) => state.addImportedImage);
   const importedAssetHistory = useStudioStore((state) => state.importedAssetHistory);
   const importedImageHistory = useStudioStore((state) => state.importedImageHistory);
+  const pushToast = useStudioStore((state) => state.pushToast);
 
-  const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.addEventListener('load', () => {
-      if (typeof reader.result === 'string') {
-        addModel(file.name, reader.result);
+    try {
+      if (!hasExtension(file.name, supportedModelTypes)) {
+        throw new Error('Unsupported file type. Import a .glb or self-contained .gltf model.');
       }
-    });
-    reader.readAsDataURL(file);
-    event.target.value = '';
+
+      const modelDataUrl = await readFileAsDataUrl(file);
+      await validateGltf(modelDataUrl);
+      addModel(file.name, modelDataUrl);
+      pushToast(`Imported ${file.name}.`, 'success');
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Import failed. Try a different GLB or GLTF file.', 'error');
+    } finally {
+      event.target.value = '';
+    }
   };
 
-  const handleImageImport = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.addEventListener('load', () => {
-      if (typeof reader.result !== 'string') return;
+    try {
+      if (!hasExtension(file.name, supportedImageTypes)) {
+        throw new Error('Unsupported file type. Import a PNG, JPG, JPEG, or WEBP image.');
+      }
 
-      const image = new Image();
-      image.addEventListener('load', () => {
-        addImagePlane(file.name, reader.result as string, image.naturalWidth || 1, image.naturalHeight || 1);
-      });
-      image.src = reader.result;
-    });
-    reader.readAsDataURL(file);
-    event.target.value = '';
+      if (file.size > maxImageBytes) {
+        throw new Error('Image is too large. Use a web-sized PNG, JPG, or WEBP under 12 MB for reliable browser storage and export.');
+      }
+
+      const imageDataUrl = await readFileAsDataUrl(file);
+      const imageSize = await loadImageSize(imageDataUrl);
+
+      if (imageSize.width * imageSize.height > maxImagePixels) {
+        throw new Error('Image dimensions are too large. Use an image under about 24 megapixels for decals and labels.');
+      }
+
+      addImagePlane(file.name, imageDataUrl, imageSize.width, imageSize.height);
+      pushToast(`Imported ${file.name}.`, 'success');
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Image import failed. Try a smaller PNG, JPG, or WEBP file.', 'error');
+    } finally {
+      event.target.value = '';
+    }
   };
 
   return (
@@ -149,4 +173,47 @@ export function LeftToolbar() {
       />
     </aside>
   );
+}
+
+function hasExtension(fileName: string, extensions: string[]) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  return extension ? extensions.includes(extension) : false;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error(`Could not read ${file.name}.`));
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function validateGltf(modelDataUrl: string) {
+  try {
+    const response = await fetch(modelDataUrl);
+    const buffer = await response.arrayBuffer();
+    const loader = new GLTFLoader();
+
+    await new Promise((resolve, reject) => {
+      loader.parse(buffer, '', resolve, reject);
+    });
+  } catch {
+    throw new Error('This GLB/GLTF could not be opened. It may be broken, incomplete, or depend on external files.');
+  }
+}
+
+function loadImageSize(imageDataUrl: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve({ width: image.naturalWidth || 1, height: image.naturalHeight || 1 });
+    image.onerror = () => reject(new Error('Image import failed. The file may be corrupt or unsupported by this browser.'));
+    image.src = imageDataUrl;
+  });
 }

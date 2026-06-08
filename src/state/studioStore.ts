@@ -12,6 +12,8 @@ import type {
   StudioObject,
   StudioProject,
   StudioSettings,
+  StudioToast,
+  ToastTone,
   TransformMode,
   Vec3,
 } from '../types/studioTypes';
@@ -51,6 +53,7 @@ interface StudioState {
   frameRequest: { target: FrameTarget; token: number } | null;
   exportRequestToken: number;
   settings: StudioSettings;
+  toasts: StudioToast[];
   addPrimitive: (kind: PrimitiveKind) => void;
   addModel: (fileName: string, modelDataUrl: string) => void;
   addImagePlane: (fileName: string, imageDataUrl: string, width: number, height: number) => void;
@@ -75,6 +78,8 @@ interface StudioState {
   resetCamera: () => void;
   requestFrame: (target: FrameTarget) => void;
   requestExportScreenshot: () => void;
+  pushToast: (message: string, tone?: ToastTone) => void;
+  dismissToast: (id: string) => void;
   applySceneTemplate: (template: SceneTemplate) => void;
   applyProductRenderPreset: (preset: ProductRenderPreset) => void;
   updateSettings: (settings: Partial<StudioSettings>) => void;
@@ -207,6 +212,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   frameRequest: null,
   exportRequestToken: 0,
   settings: DEFAULT_SETTINGS,
+  toasts: [],
 
   addPrimitive: (kind) => {
     const count = get().objects.filter((object) => object.kind === kind).length + 1;
@@ -499,6 +505,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   resetCamera: () => set((state) => ({ cameraPreset: 'isometric', cameraDistance: 6, cameraResetToken: state.cameraResetToken + 1, isDirty: true })),
   requestFrame: (target) => set((state) => ({ frameRequest: { target, token: (state.frameRequest?.token ?? 0) + 1 } })),
   requestExportScreenshot: () => set((state) => ({ exportRequestToken: state.exportRequestToken + 1 })),
+  pushToast: (message, tone = 'info') => {
+    const id = makeId();
+    set((state) => ({ toasts: [...state.toasts.slice(-3), { id, message, tone }] }));
+    window.setTimeout(() => {
+      set((state) => ({ toasts: state.toasts.filter((toast) => toast.id !== id) }));
+    }, tone === 'error' ? 7000 : 4200);
+  },
+  dismissToast: (id) => set((state) => ({ toasts: state.toasts.filter((toast) => toast.id !== id) })),
   applySceneTemplate: (template) =>
     set((state) => {
       const next = sceneTemplates[template];
