@@ -113,4 +113,6 @@ export interface StudioProject {
   notes?: string;
   objects: StudioObject[];
   settings?: StudioSettings;
+  cameraPreset?: CameraPreset;
+  cameraDistance?: number;
 }

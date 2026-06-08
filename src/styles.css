@@ -255,6 +255,63 @@ input[type='range'] {
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
 }
 
+.menu-note {
+  margin: 0;
+  color: #91a1b3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.saved-item-list {
+  display: grid;
+  gap: 8px;
+}
+
+.saved-item {
+  display: grid;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid rgba(83, 101, 122, 0.52);
+  border-radius: 6px;
+  background: rgba(7, 11, 16, 0.48);
+}
+
+.saved-item strong,
+.saved-item span {
+  display: block;
+}
+
+.saved-item strong {
+  overflow: hidden;
+  color: #f2f6fb;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-item span {
+  margin-top: 3px;
+  color: #98a8ba;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.browser-project-item {
+  gap: 10px;
+}
+
+.saved-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.saved-item-actions button {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
 .menu-group:nth-last-child(-n + 2) .menu-panel {
   right: 0;
   left: auto;

@@ -62,8 +62,11 @@ npm run build
 - Clear Scene removes scene objects while preserving project title, notes, and scene settings.
 - Watch the Unsaved indicator near the project title after scene, metadata, camera, or settings changes.
 - Duplicate or delete the selected object from the properties panel.
-- Save the project as JSON from the top bar.
-- Load a saved JSON project from the top bar.
+- Save the project as a JSON file from the Project menu or quick Save button.
+- Load a saved JSON project from the Project menu or quick Load button.
+- Save projects to this browser from the Project menu for quick local reuse.
+- Open, duplicate, or delete browser-saved projects from Recent Projects.
+- Save custom render/export setups as browser-local render presets from the Scene menu.
 - Choose a screenshot output size, edit the export filename, then export a PNG from the top bar.
 - Reset the camera from the top bar.
 
@@ -80,6 +83,33 @@ npm run build
    - `Viewport` for quick drafts that match the current canvas.
 6. Use transparent background mode when exporting cutouts for Photoshop, Illustrator, or other compositing workflows.
 7. Edit the export filename only when you want to override the selected-object filename fallback, then click Export PNG.
+
+## Local Project Library
+
+The Project menu supports two save workflows:
+
+- Save JSON File downloads a portable `.json` project file for backup, sharing, and long-term storage.
+- Save to Browser stores the current project in this browser using IndexedDB for faster reopening on the same machine and browser profile.
+
+Use Save As Browser Project when you want a new browser-local copy instead of overwriting the open browser project. Recent Projects shows the project title, saved date/time, app version, object count, and a notes preview. Recent items can be opened, duplicated, or deleted without changing the JSON export/import workflow.
+
+Hall Product Studio keeps one browser-local autosave draft while the scene is unsaved. If the page reloads and a draft exists, the app asks whether to restore it. Saving, loading, or creating a new scene clears the draft.
+
+Browser storage is convenient, but it is not a backup plan. Export important work as JSON and keep those files with the related model/image assets. Browser storage can be cleared by browser settings, profile cleanup, private browsing, or site-data resets.
+
+Large imported models and image planes are embedded as data URLs in saved project data. This is useful for self-contained projects, but browser storage and JSON file sizes can grow quickly. Before saving to browser storage, the app estimates the project JSON size. Projects over 5 MB show a warning and should also be exported as JSON files instead of relying only on browser-local storage.
+
+## Custom Render Presets
+
+The Scene menu can save the current render setup as a custom browser-local preset. A custom preset stores:
+
+- background mode
+- floor, grid, and shadow visibility
+- export size
+- camera preset
+- camera distance
+
+Use custom presets for repeatable website, Autodesk application, review, or cutout workflows that differ from the built-in product render presets. Custom render presets are local to the current browser profile.
 
 ## Asset Library
 
@@ -142,27 +172,29 @@ For Autodesk application images, use the Autodesk Application Image preset, keep
 
 For Photoshop or Illustrator compositing, use Photoshop Cutout or Transparent Cutout, hide floor/grid/shadows, and export `2400x2400` PNGs with transparent background.
 
-For repeatable product scenes, start with Product Base Plate or Simple Display Stand, add brackets, label tags, or logo placeholders, then import the real product model. Save the project JSON once the scene layout, title, notes, camera framing, and render preset are dialed in.
+For repeatable product scenes, start with Product Base Plate or Simple Display Stand, add brackets, label tags, or logo placeholders, then import the real product model. Save to Browser while iterating, then export a JSON file as a durable backup once the scene layout, title, notes, camera framing, and render preset are dialed in.
 
-For fastest product image creation, choose a project template first, import or insert the product model, apply HIS brand/material presets, use Frame Selected or Frame All, then export the recommended PNG size. Save the JSON once the scene becomes a reusable starting point.
+For fastest product image creation, choose a project template first, import or insert the product model, apply HIS brand/material presets, use Frame Selected or Frame All, then export the recommended PNG size. Save custom render presets for recurring output setups and save browser projects for active work-in-progress scenes.
 
 ## Notes
 
-Saved projects include app version, save timestamp, project title, notes, primitive object settings, built-in asset identifiers and grouped primitive structure, imported models and imported images as local data URLs, scene display settings, object lock state, and object visibility. Large imported models or high-resolution images can produce large JSON project files. The unsaved indicator resets after save, load, or creating a new scene from a template.
+Saved projects include app version, save timestamp, project title, notes, primitive object settings, built-in asset identifiers and grouped primitive structure, imported models and imported images as local data URLs, scene display settings, camera preset/distance, object lock state, and object visibility. Large imported models or high-resolution image planes can produce large browser records and JSON project files. The unsaved indicator resets after save, load, browser save, or creating a new scene from a template.
 
 Imported models are auto-centered and normalized to a practical staging size. For best project save/load behavior, prefer self-contained `.glb` files. `.gltf` files that depend on external `.bin` or texture files may not reload correctly unless those references are embedded or otherwise available.
 
 Fixed-size screenshot exports render the WebGL scene at the chosen output resolution before downloading the PNG. Very large or complex models can take a moment to export at `2400x2400`, depending on the GPU and browser.
 
-The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.7.
+The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.8.1.
 
 Built-in assets are approximate staging helpers, not manufacturing geometry. Imported model and imported image history are not persisted as reusable libraries across browser reloads unless the asset has been placed in a saved project.
 
 Project templates are starting points. They can insert built-in assets and configure the scene, but they do not preserve custom local imported model history across reloads.
 
-Very large images consume browser memory and can make project JSON files heavy because image data is embedded as data URLs. Use web-sized PNG/JPG/WEBP assets for labels and logos when practical.
+Very large images consume browser memory and can make project JSON files heavy because image plane data is embedded as data URLs. Use web-sized PNG/JPG/WEBP assets for labels and logos when practical, and export JSON backups for large image-heavy projects.
 
 Annotation dimensions are visual callouts, not CAD measurements. Auto-length uses the scene-unit distance between local start and end points. Annotation text uses real-time WebGL text rendering, so exact typography may differ from desktop publishing tools.
+
+Browser-saved projects and custom render presets are local to the current browser and device. Use JSON export for backups, moving work between machines, or preserving work before clearing browser data.
 
 ## Layout Verification
 

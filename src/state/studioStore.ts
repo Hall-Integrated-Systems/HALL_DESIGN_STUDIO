@@ -42,6 +42,7 @@ interface StudioState {
   projectTitle: string;
   projectNotes: string;
   isDirty: boolean;
+  activeBrowserProjectId: string | null;
   selectedObjectId: string | null;
   transformMode: TransformMode;
   cameraPreset: CameraPreset;
@@ -61,6 +62,7 @@ interface StudioState {
   applyProjectTemplate: (templateId: ProjectTemplateId) => void;
   clearScene: () => void;
   markSaved: () => void;
+  setActiveBrowserProjectId: (id: string | null) => void;
   selectObject: (id: string | null) => void;
   updateObject: (id: string, patch: Partial<StudioObject>) => void;
   updateObjectTransform: (id: string, transform: Partial<Pick<StudioObject, 'position' | 'rotation' | 'scale'>>) => void;
@@ -78,7 +80,7 @@ interface StudioState {
   updateSettings: (settings: Partial<StudioSettings>) => void;
   updateExportFileName: (fileName: string) => void;
   updateProjectInfo: (info: Partial<Pick<StudioState, 'projectTitle' | 'projectNotes'>>) => void;
-  loadProject: (project: StudioProject) => void;
+  loadProject: (project: StudioProject, browserProjectId?: string | null) => void;
 }
 
 const DEFAULT_MATERIAL = {
@@ -196,6 +198,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   projectTitle: 'Untitled Product Render',
   projectNotes: '',
   isDirty: false,
+  activeBrowserProjectId: null,
   selectedObjectId: null,
   transformMode: 'translate',
   cameraPreset: 'isometric',
@@ -427,6 +430,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       frameRequest: starterObjects.length > 0 ? { target: 'all', token: (get().frameRequest?.token ?? 0) + 1 } : null,
       settings: { ...DEFAULT_SETTINGS, ...template.settings, exportFileName: '', exportFileNameEdited: false },
       isDirty: false,
+      activeBrowserProjectId: null,
     });
   },
 
@@ -439,6 +443,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     })),
 
   markSaved: () => set({ isDirty: false }),
+  setActiveBrowserProjectId: (id) => set({ activeBrowserProjectId: id }),
 
   selectObject: (id) => set({ selectedObjectId: id }),
 
@@ -521,14 +526,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   updateExportFileName: (fileName) =>
     set((state) => ({ settings: { ...state.settings, exportFileName: fileName, exportFileNameEdited: true }, isDirty: true })),
   updateProjectInfo: (info) => set((state) => ({ ...state, ...info, isDirty: true })),
-  loadProject: (project) =>
+  loadProject: (project, browserProjectId = null) =>
     set({
       objects: project.objects.map(withObjectDefaults),
       settings: { ...DEFAULT_SETTINGS, ...project.settings },
       projectTitle: project.title || 'Untitled Product Render',
       projectNotes: project.notes || '',
-      cameraDistance: 6,
+      cameraPreset: project.cameraPreset ?? 'isometric',
+      cameraDistance: project.cameraDistance ?? 6,
+      cameraResetToken: get().cameraResetToken + 1,
       selectedObjectId: null,
       isDirty: false,
+      activeBrowserProjectId: browserProjectId,
     }),
 }));

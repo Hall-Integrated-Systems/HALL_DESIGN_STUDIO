@@ -1,7 +1,14 @@
-import type { StudioObject, StudioProject, StudioSettings } from '../types/studioTypes';
+import type { CameraPreset, StudioObject, StudioProject, StudioSettings } from '../types/studioTypes';
 import { APP_VERSION } from '../config/presets';
 
-export function createProject(objects: StudioObject[], settings: StudioSettings, title: string, notes: string): StudioProject {
+export function createProject(
+  objects: StudioObject[],
+  settings: StudioSettings,
+  title: string,
+  notes: string,
+  cameraPreset?: CameraPreset,
+  cameraDistance?: number,
+): StudioProject {
   return {
     version: 1,
     appVersion: APP_VERSION,
@@ -10,11 +17,20 @@ export function createProject(objects: StudioObject[], settings: StudioSettings,
     notes,
     objects,
     settings,
+    cameraPreset,
+    cameraDistance,
   };
 }
 
-export function downloadProject(objects: StudioObject[], settings: StudioSettings, title: string, notes: string) {
-  const project = createProject(objects, settings, title, notes);
+export function downloadProject(
+  objects: StudioObject[],
+  settings: StudioSettings,
+  title: string,
+  notes: string,
+  cameraPreset?: CameraPreset,
+  cameraDistance?: number,
+) {
+  const project = createProject(objects, settings, title, notes, cameraPreset, cameraDistance);
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -35,4 +51,15 @@ export async function readProjectFile(file: File): Promise<StudioProject> {
   }
 
   return parsed;
+}
+
+export function estimateProjectBytes(project: StudioProject): number {
+  return new Blob([JSON.stringify(project)]).size;
+}
+
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kilobytes = bytes / 1024;
+  if (kilobytes < 1024) return `${kilobytes.toFixed(1)} KB`;
+  return `${(kilobytes / 1024).toFixed(1)} MB`;
 }
