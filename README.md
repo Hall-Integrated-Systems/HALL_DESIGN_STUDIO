@@ -1,238 +1,110 @@
 # Hall Product Studio
 
-Hall Product Studio is a lightweight browser-based 3D product visualization workspace for staging prototype and product mockups. It is designed for quick arrangement, material tuning, and clean image export rather than CAD modeling.
+Hall Product Studio is a browser-based 3D product visualization and mockup workspace for Hall Integrated Systems product images, prototype staging, labels, decals, annotations, and clean PNG exports.
 
-## Setup
+It is intentionally lightweight: it helps arrange models, apply materials, create presentation scenes, and export product imagery. It is not CAD software.
+
+Live site:
+
+```text
+https://studio.hallintegratedsystems.com
+```
+
+## Quick Start
 
 ```bash
 npm install
-```
-
-## Development
-
-```bash
 npm run dev
 ```
 
 Open the local Vite URL shown in the terminal.
 
-## Build
+Build for production:
 
 ```bash
 npm run build
 ```
 
-## Usage
+## Basic Workflow
 
-- Add Cube, Cylinder, Sphere, or Plane from the Simple Shapes section at the top of the left toolbar.
-- Import `.glb` or `.gltf` files from the import button.
-- Import `.png`, `.jpg`, `.jpeg`, or `.webp` images as flat image planes.
-- Insert reusable assets from the Asset Library in the left toolbar.
-- Add annotation overlays from the Annotations section in the left toolbar.
-- Use built-in starter assets such as H Logo Placeholder, Product Base Plate, Simple Display Stand, Wall Mount Plate, Small Bracket, Label Tag, and Screw Boss Placeholder.
-- Reinsert models from the Imported Models asset list after importing them once in the current session.
-- Reinsert imported images from the Image / Decal asset list after importing them once in the current session.
-- Start a repeatable setup from New From Template in the top bar.
-- Click an object in the canvas to select it.
-- Select objects from the scene object list when canvas selection is inconvenient.
-- Use the transform mode selector to move, rotate, or scale the selected object.
-- Edit position, rotation, scale, color, roughness, metalness, and opacity in the right properties panel.
-- For image planes, edit opacity, double-sided rendering, aspect-ratio preservation, and tint color.
-- For annotations, edit text, color, size, line points, arrow length/direction, face-camera behavior, and dimension labels where applicable.
-- Use HIS brand color presets for quick, consistent prototype and product mockup colors.
-- Use material presets such as matte plastic, satin metal, rubber black, clear plastic, prototype gray, and premium black.
-- Add a project title and notes so saved project JSON remembers what the render is for.
-- Lock objects to prevent accidental transform-control movement.
-- Hide objects without deleting them.
-- Use the camera presets for front, back, left, right, top, and isometric product views.
-- Use the camera distance slider to tighten or loosen framing.
-- Use Frame Selected to center the camera on the active object, or Frame All to fit all visible objects.
-- Switch between dark, light, and transparent screenshot backgrounds.
-- Toggle the floor, grid, and shadows for cleaner product exports.
-- Apply scene templates for common product photography setups:
-  - Catalog White for clean store tiles.
-  - Dark Premium for high-contrast presentation images.
-  - Transparent Cutout for compositing in Photoshop or Illustrator.
-  - Workbench Layout for layout and arrangement work.
-- Apply product render presets for repeatable output:
-  - Website Product Tile sets a transparent square high-resolution export and frames the selected object.
-  - Website Banner uses a dark premium scene, `1920x1080`, and frames the whole layout.
-  - Autodesk Application Image uses a clean white catalog setup, hidden grid, shadows, and `2400x2400`.
-  - Photoshop Cutout uses a transparent, floorless, shadowless `2400x2400` setup.
-- Clear Scene removes scene objects while preserving project title, notes, and scene settings.
-- Watch the Unsaved indicator near the project title after scene, metadata, camera, or settings changes.
-- Duplicate or delete the selected object from the properties panel.
-- Save the project as a JSON file from the Project menu or quick Save button.
-- Load a saved JSON project from the Project menu or quick Load button.
-- Save projects to this browser from the Project menu for quick local reuse.
-- Open, duplicate, or delete browser-saved projects from Recent Projects.
-- Save custom render/export setups as browser-local render presets from the Scene menu.
-- Choose a screenshot output size, edit the export filename, then export a PNG from the top bar.
-- Reset the camera from the top bar.
-- Use the clearly labeled Help / About button in the top bar for app version, live site URL, supported imports, export size reminders, storage guidance, shortcuts, and limitations.
-- Use keyboard shortcuts: Delete removes the selected object, Ctrl/Cmd+S saves to browser, Ctrl/Cmd+E exports PNG, and Escape deselects.
+1. Add a Cube, Cylinder, Sphere, or Plane from Simple Shapes in the left toolbar.
+2. Import a `.glb` model or add an image plane/decal if needed.
+3. Select an object in the canvas or scene object list.
+4. Use translate, rotate, or scale controls to stage it.
+5. Apply brand colors, material presets, scene templates, or render presets.
+6. Add annotations, labels, decals, or simple display assets.
+7. Save to browser storage while iterating.
+8. Export a JSON backup for important work.
+9. Export PNG output from the top bar.
 
-## Export Workflow
+## Feature List
 
-1. Arrange the object or imported model in the scene.
-2. Apply brand color and material presets to keep the render consistent with Hall Integrated Systems visual language.
-3. Apply a scene template or product render preset, or manually choose background, floor, grid, and shadow settings.
-4. Choose a camera preset, then use Distance, Frame Selected, or Frame All to refine the composition.
-5. Choose an export size:
-   - `1200x1200` for product tiles and square catalog cards.
-   - `1920x1080` for website banners and widescreen application images.
-   - `2400x2400` for higher-quality square product images.
-   - `Viewport` for quick drafts that match the current canvas.
-6. Use transparent background mode when exporting cutouts for Photoshop, Illustrator, or other compositing workflows.
-7. Edit the export filename only when you want to override the selected-object filename fallback, then click Export PNG.
+- Full-screen Three.js / React Three Fiber product staging canvas
+- Simple shape creation: Cube, Cylinder, Sphere, Plane
+- GLB/GLTF import with friendlier import errors
+- Image planes and decals for PNG, JPG/JPEG, and WEBP
+- Transparent PNG logo/label support
+- Annotation objects: text labels, arrows, dimension lines, and marker dots
+- Object selection, transform controls, duplicate, delete, lock, and visibility
+- Material controls with color, roughness, metalness, and opacity
+- Hall Integrated Systems brand color presets
+- Material presets for plastics, metals, rubber, prototype gray, clear plastic, and premium black
+- Scene templates and product render presets
+- Asset Library with reusable grouped starter assets
+- Browser project storage with Recent Projects
+- JSON project export/import
+- One autosave draft with restore prompt
+- True high-resolution PNG export
+- Camera presets, camera distance, Frame Selected, and Frame All
+- Responsive grouped top-bar menus with outside-click and Escape close behavior
+- Help / About panel with version, shortcuts, storage notes, and limitations
 
-## Quick Start
+## Common Workflows
 
-1. Use Simple Shapes in the left toolbar to add a Cube, Cylinder, Sphere, or Plane.
-2. Select the new object in the canvas or scene object list.
-3. Use translate, rotate, or scale mode to position it.
-4. Apply a material preset or brand color in the right properties panel.
-5. Use Help / About in the top bar when you need supported import types, shortcut reminders, export size guidance, storage notes, or current app version.
+### Product Website Image
 
-## Local Project Library
+Use Website Product Tile or Website Banner render presets, frame the selected product, hide the grid, tune materials, and export either `2400x2400` or `1920x1080`.
 
-The Project menu supports two save workflows:
+### Autodesk Application Image
 
-- Save JSON File downloads a portable `.json` project file for backup, sharing, and long-term storage.
-- Save to Browser stores the current project in this browser using IndexedDB for faster reopening on the same machine and browser profile.
+Use the Autodesk Application Image preset, keep the grid hidden, verify shadows are enabled, frame the product, and export `2400x2400`.
 
-Use Save As Browser Project when you want a new browser-local copy instead of overwriting the open browser project. Recent Projects shows the project title, saved date/time, app version, object count, and a notes preview. Recent items can be opened, duplicated, or deleted without changing the JSON export/import workflow.
+### Photoshop or Illustrator Cutout
 
-Hall Product Studio keeps one browser-local autosave draft while the scene is unsaved. If the page reloads and a draft exists, the app asks whether to restore it. Saving, loading, or creating a new scene clears the draft.
+Use Photoshop Cutout or Transparent Cutout, hide floor/grid/shadows, use transparent background mode, and export `2400x2400`.
 
-Browser storage is convenient, but it is not a backup plan. Export important work as JSON and keep those files with the related model/image assets. Browser storage can be cleared by browser settings, profile cleanup, private browsing, or site-data resets.
+### Reusable Prototype Scene
 
-Large imported models and image planes are embedded as data URLs in saved project data. This is useful for self-contained projects, but browser storage and JSON file sizes can grow quickly. Before saving to browser storage, the app estimates the project JSON size. Projects over 5 MB show a warning and should also be exported as JSON files instead of relying only on browser-local storage.
+Start from a project template or Asset Library components, add the product model, add decals/annotations, save to browser storage for active work, then export a JSON backup.
 
-## Custom Render Presets
+## Export Sizes
 
-The Scene menu can save the current render setup as a custom browser-local preset. A custom preset stores:
+- `1200x1200`: product tiles and square catalog cards
+- `1920x1080`: website banners and widescreen application images
+- `2400x2400`: higher-quality square product images
+- `Viewport`: quick drafts matching the current canvas
 
-- background mode
-- floor, grid, and shadow visibility
-- export size
-- camera preset
-- camera distance
+## Deployment
 
-Use custom presets for repeatable website, Autodesk application, review, or cutout workflows that differ from the built-in product render presets. Custom render presets are local to the current browser profile.
+Production deployment target:
 
-## Status and Error Handling
+```text
+https://studio.hallintegratedsystems.com
+```
 
-Hall Product Studio shows small status messages for important actions such as project save/load, browser save warnings, autosave restore, import failures, and PNG export completion. Failed imports are checked before insertion so unsupported file types, broken or incomplete GLB/GLTF models, oversized images, and damaged project JSON files show friendlier messages.
+The app is built with Vite and deployed as static files through Azure Static Web Apps. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-Destructive or scene-replacing actions ask for confirmation when appropriate, including clearing a scene, deleting browser projects, overwriting a browser project, and loading a project while unsaved work exists.
+## Documentation
 
-## Asset Library
+- [CHANGELOG.md](CHANGELOG.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [QA Checklist](docs/QA_CHECKLIST.md)
+- [Limitations](docs/LIMITATIONS.md)
 
-The Asset Library groups reusable components into Logos, Product Parts, Fixtures / Stands, Background Props, Image / Decal, and Imported Models.
+## Important Notes
 
-Built-in assets are made from grouped primitives. Each inserted asset behaves as one selectable scene object for transform, duplicate, delete, save, load, visibility, lock, and material editing. This is meant for product staging and mockups, not detailed part modeling.
-
-Imported `.glb` or `.gltf` files are added to the Imported Models section for the current browser session after import. You can insert another copy without choosing the file again. Imported model history is session-only; saved projects still include imported model data for objects already placed in the scene.
-
-Imported images are added to the Image / Decal section for the current browser session after import. You can insert another copy without choosing the file again. Built-in decal helpers include Blank Label, Product Tag, Front Logo Placement Guide, and Side Decal Placement Guide.
-
-Grouping is intentionally simple in v1.6. A grouped built-in asset transforms as one object, and its parts are not individually selectable or editable through a nested hierarchy yet.
-
-## Image Planes and Decals
-
-Use Import Image to add PNG, JPG/JPEG, or WEBP files as flat planes in the 3D scene. Image planes are selectable, transformable, duplicatable, deletable, lockable, hideable, and saved in project JSON.
-
-Transparent PNG logos keep their alpha channel, making them useful for HIS logo mockups, product markings, label art, front-panel graphics, and Photoshop/Illustrator cutout workflows. The high-resolution PNG exporter includes image planes in the render, including transparent-background exports.
-
-Image planes preserve aspect ratio by default by sizing the inserted plane from the source image dimensions. The Preserve aspect ratio toggle can restore the imported image ratio based on the current height scale. For decals, rotate and position the plane slightly in front of the target face to avoid visual overlap.
-
-## Annotations
-
-Use the Annotations section in the left toolbar to add:
-
-- Text Label for simple labels and short explanatory notes.
-- Arrow Callout for pointing at product features.
-- Dimension Line for lightweight visual size callouts.
-- Marker / Dot for highlighting a point or feature.
-
-Annotations are regular scene objects: they can be selected, moved, rotated, scaled, duplicated, deleted, locked, hidden, saved, loaded, and exported. High-resolution PNG export includes annotations because they render inside the Three.js scene.
-
-Text labels support text content, font size, color, optional background, and optional face-camera behavior. Arrow callouts support text, color, arrow length, direction, line thickness, background, and optional face-camera behavior. Dimension lines support editable start/end points, optional auto-length text, custom label text, color, and line thickness. Marker dots support color and size.
-
-For product concept and callout renders, start with a product template, frame the object, add labels or arrows near key features, then export a `1920x1080` banner or `2400x2400` square image. For transparent compositing, use a transparent scene or Photoshop Cutout preset before adding annotations.
-
-## Project Templates
-
-New From Template creates a fresh scene from a centralized project template. If the scene already has objects or unsaved changes, Hall Product Studio asks for confirmation before replacing the current scene.
-
-Available templates:
-
-- Blank Studio: empty dark workbench scene for scratch staging.
-- Website Product Tile: transparent `2400x2400` setup for square product tiles.
-- Website Banner: dark premium `1920x1080` setup for hero/support images.
-- Autodesk Application Image: clean white `2400x2400` setup for technical application imagery.
-- Photoshop Cutout: transparent, floorless, shadowless `2400x2400` setup for compositing.
-- Product Base Display: adds Product Base Plate and Simple Display Stand with catalog settings.
-- Bracket / Mount Concept: adds Wall Mount Plate, Small Bracket, and Screw Boss Placeholder for quick mounting concepts.
-- Logo Hero Render: adds H Logo Placeholder with a dark premium widescreen setup.
-- Workbench Review Scene: adds starter review props with grid-enabled workbench settings.
-
-Each template sets scene settings, camera preset, camera distance, export size, project title, starter notes, and any starter built-in assets. Templates do not use external storage or delete anything without confirmation.
-
-## Suggested Workflows
-
-For product website images, import or build the product, select the main object, apply a brand color or material preset, then use Website Product Tile for square assets or Website Banner for widescreen hero/support images. Use Frame Selected for single-product tiles and Frame All for grouped scenes.
-
-For Autodesk application images, use the Autodesk Application Image preset, keep the grid hidden, verify shadows are enabled, and export at `2400x2400`. Prototype Gray, Satin Metal, Brushed Aluminum, and HIS Blue are good starting materials for technical product mockups.
-
-For Photoshop or Illustrator compositing, use Photoshop Cutout or Transparent Cutout, hide floor/grid/shadows, and export `2400x2400` PNGs with transparent background.
-
-For repeatable product scenes, start with Product Base Plate or Simple Display Stand, add brackets, label tags, or logo placeholders, then import the real product model. Save to Browser while iterating, then export a JSON file as a durable backup once the scene layout, title, notes, camera framing, and render preset are dialed in.
-
-For fastest product image creation, choose a project template first, import or insert the product model, apply HIS brand/material presets, use Frame Selected or Frame All, then export the recommended PNG size. Save custom render presets for recurring output setups and save browser projects for active work-in-progress scenes.
-
-## Notes
-
-Saved projects include app version, save timestamp, project title, notes, primitive object settings, built-in asset identifiers and grouped primitive structure, imported models and imported images as local data URLs, scene display settings, camera preset/distance, object lock state, and object visibility. Large imported models or high-resolution image planes can produce large browser records and JSON project files. The unsaved indicator resets after save, load, browser save, or creating a new scene from a template.
-
-Imported models are auto-centered and normalized to a practical staging size. For best project save/load behavior, prefer self-contained `.glb` files. `.gltf` files that depend on external `.bin` or texture files may not reload correctly unless those references are embedded or otherwise available.
-
-Fixed-size screenshot exports render the WebGL scene at the chosen output resolution before downloading the PNG. Very large or complex models can take a moment to export at `2400x2400`, depending on the GPU and browser.
-
-The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.9.3.
-
-Built-in assets are approximate staging helpers, not manufacturing geometry. Imported model and imported image history are not persisted as reusable libraries across browser reloads unless the asset has been placed in a saved project.
-
-Project templates are starting points. They can insert built-in assets and configure the scene, but they do not preserve custom local imported model history across reloads.
-
-Very large images consume browser memory and can make project JSON files heavy because image plane data is embedded as data URLs. Use web-sized PNG/JPG/WEBP assets for labels and logos when practical, and export JSON backups for large image-heavy projects.
-
-Annotation dimensions are visual callouts, not CAD measurements. Auto-length uses the scene-unit distance between local start and end points. Annotation text uses real-time WebGL text rendering, so exact typography may differ from desktop publishing tools.
-
-Browser-saved projects and custom render presets are local to the current browser and device. Use JSON export for backups, moving work between machines, or preserving work before clearing browser data.
-
-## QA Checklist
-
-Before shipping a release, verify:
-
-- Import a `.glb` model and confirm it appears, selects, transforms, and exports.
-- Import a transparent PNG and confirm alpha renders correctly as an image plane.
-- Try an unsupported import file and confirm a friendly failure message appears.
-- Add a text label or arrow annotation and confirm it appears in PNG export.
-- Save a project to browser storage, reload, and reopen it from Recent Projects.
-- Export a JSON project, clear the scene, reload the JSON, and confirm objects return.
-- Make an unsaved scene change, reload, and confirm the autosave restore prompt works.
-- Export a PNG and confirm the completion status message appears.
-- Verify the live deployment at `https://studio.hallintegratedsystems.com`.
-
-## Layout Verification
-
-Before shipping UI changes, check:
-
-- Ultrawide full screen: top controls stay compact and grouped.
-- `1920x1080` full screen: top bar does not crowd or overflow horizontally.
-- Half-screen window: menus remain usable and side panels do not cover each other.
-- Narrow window: top bar wraps, properties panel scrolls from the bottom, and key controls remain reachable.
-- Right panel scroll check: material presets, object list, project notes, and transforms remain reachable.
-- Canvas resize check: the 3D canvas fills the remaining workspace after browser resize.
+- Browser project storage is local to the current browser/device and is not a durable backup.
+- Export important work as JSON files.
+- Prefer self-contained `.glb` models over external-file `.gltf` packages.
+- Large image planes and model data can increase browser storage, project JSON size, and export time.
+- The production build currently emits an expected large Three.js bundle warning.

@@ -1,0 +1,69 @@
+# Changelog
+
+## v2.0.0
+
+Release hardening pass for Hall Product Studio. Adds release documentation, deployment notes, QA checklist, limitations documentation, and a cleaner README. The app version shown in Help / About is now `2.0.0`.
+
+## v1.9.x
+
+- Added app-wide toast/status messages.
+- Added friendlier errors for imports, JSON loading, and export failures.
+- Added Help / About with app version, live site, supported imports, shortcuts, storage guidance, and limitations.
+- Added keyboard shortcuts for Delete, Escape, Ctrl/Cmd+S, and Ctrl/Cmd+E.
+- Improved top-bar menu behavior so menus close on outside click, Escape, or when another menu opens.
+- Made Simple Shapes and Help / About more visible.
+- Polished left-toolbar spacing and section readability.
+
+## v1.8.x
+
+- Added browser-local project storage with IndexedDB.
+- Added Recent Projects with open, duplicate, and delete actions.
+- Added one autosave draft with restore prompt after reload.
+- Added custom browser-local render presets.
+- Added storage safety warnings for large projects and image-heavy scenes.
+
+## v1.7.0
+
+- Added annotation objects: text labels, arrow callouts, dimension lines, and marker dots.
+- Added annotation controls for text, color, size, line points, face-camera behavior, and dimension labels.
+- Included annotations in high-resolution PNG export.
+
+## v1.6.0
+
+- Added image plane and decal import for PNG, JPG/JPEG, and WEBP.
+- Preserved PNG transparency for logos, labels, and product graphics.
+- Added built-in image/decal placeholders and in-session imported image reuse.
+
+## v1.5.x
+
+- Added project templates and New From Template workflow.
+- Added dirty-state tracking, clear scene behavior, and responsive grouped top-bar controls.
+- Improved reduced-width usability and right-panel scrolling.
+
+## v1.4.0
+
+- Added Asset Library categories and reusable built-in grouped assets.
+- Added in-session imported model reuse.
+- Added basic grouped asset behavior for transform, duplicate, delete, save, and load.
+
+## v1.3.0
+
+- Added Hall Integrated Systems brand color presets.
+- Added material presets for plastics, metals, rubber, glass/clear plastic, prototype gray, and premium black.
+- Added product render presets and project metadata fields.
+
+## v1.2.0
+
+- Added true high-resolution PNG export at selected target resolution.
+- Added export filename controls.
+- Added scene templates, camera distance, Frame Selected, and Frame All.
+
+## v1.1.0
+
+- Added bounding-box selection outlines for primitives and imported models.
+- Added camera presets, background modes, floor/grid/shadow toggles, object lock/visibility, object list, and improved import normalization.
+
+## v1.0.0
+
+- Initial browser-based 3D product staging workspace.
+- Added Three.js/R3F canvas, orbit controls, grid floor, studio lighting, primitives, GLB/GLTF import, object selection, transform controls, material editing, duplicate/delete, JSON save/load, screenshot export, and reset camera.
