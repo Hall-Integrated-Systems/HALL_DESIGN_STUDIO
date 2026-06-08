@@ -450,9 +450,9 @@ button.active,
   top: 104px;
   bottom: 16px;
   left: 16px;
-  display: grid;
-  align-content: start;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   width: 230px;
   padding: 12px;
   overflow-y: auto;
@@ -466,20 +466,29 @@ button.active,
 
 .toolbar-section {
   display: grid;
-  gap: 8px;
+  flex: 0 0 auto;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 0 14px;
+  border-bottom: 1px solid rgba(92, 112, 134, 0.32);
+}
+
+.toolbar-section:last-of-type {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .toolbar-section h2 {
   margin: 0;
   color: #b9c7d7;
   font-size: 12px;
+  line-height: 1.2;
   letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .simple-shapes-section {
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(92, 112, 134, 0.42);
+  padding-bottom: 14px;
 }
 
 .shape-button-grid {
@@ -496,16 +505,21 @@ button.active,
 
 .asset-library details {
   display: grid;
-  gap: 8px;
-  padding-top: 4px;
+  gap: 9px;
+  padding: 6px 0 2px;
+}
+
+.asset-library details + details {
+  margin-top: 4px;
 }
 
 .asset-library summary {
-  margin-bottom: 8px;
+  margin-bottom: 0;
   color: #d6e0eb;
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .asset-library button {
