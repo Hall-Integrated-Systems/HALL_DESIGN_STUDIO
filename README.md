@@ -24,7 +24,7 @@ npm run build
 
 ## Usage
 
-- Add primitive objects from the left toolbar.
+- Add Cube, Cylinder, Sphere, or Plane from the Simple Shapes section at the top of the left toolbar.
 - Import `.glb` or `.gltf` files from the import button.
 - Import `.png`, `.jpg`, `.jpeg`, or `.webp` images as flat image planes.
 - Insert reusable assets from the Asset Library in the left toolbar.
@@ -69,7 +69,7 @@ npm run build
 - Save custom render/export setups as browser-local render presets from the Scene menu.
 - Choose a screenshot output size, edit the export filename, then export a PNG from the top bar.
 - Reset the camera from the top bar.
-- Use Help for app version, live site URL, supported imports, export size reminders, storage guidance, and shortcuts.
+- Use the clearly labeled Help / About button in the top bar for app version, live site URL, supported imports, export size reminders, storage guidance, shortcuts, and limitations.
 - Use keyboard shortcuts: Delete removes the selected object, Ctrl/Cmd+S saves to browser, Ctrl/Cmd+E exports PNG, and Escape deselects.
 
 ## Export Workflow
@@ -85,6 +85,14 @@ npm run build
    - `Viewport` for quick drafts that match the current canvas.
 6. Use transparent background mode when exporting cutouts for Photoshop, Illustrator, or other compositing workflows.
 7. Edit the export filename only when you want to override the selected-object filename fallback, then click Export PNG.
+
+## Quick Start
+
+1. Use Simple Shapes in the left toolbar to add a Cube, Cylinder, Sphere, or Plane.
+2. Select the new object in the canvas or scene object list.
+3. Use translate, rotate, or scale mode to position it.
+4. Apply a material preset or brand color in the right properties panel.
+5. Use Help / About in the top bar when you need supported import types, shortcut reminders, export size guidance, storage notes, or current app version.
 
 ## Local Project Library
 
@@ -192,7 +200,7 @@ Imported models are auto-centered and normalized to a practical staging size. Fo
 
 Fixed-size screenshot exports render the WebGL scene at the chosen output resolution before downloading the PNG. Very large or complex models can take a moment to export at `2400x2400`, depending on the GPU and browser.
 
-The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.9.
+The renderer is still a lightweight real-time Three.js workspace, not an offline product renderer. Reflections, depth of field, color management, advanced shadows, true brushed anisotropy, glass refraction, and texture relinking for multi-file `.gltf` imports are intentionally limited in v1.9.2.
 
 Built-in assets are approximate staging helpers, not manufacturing geometry. Imported model and imported image history are not persisted as reusable libraries across browser reloads unless the asset has been placed in a saved project.
 

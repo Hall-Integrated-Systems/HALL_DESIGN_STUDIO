@@ -190,8 +190,7 @@ input[type='range'] {
   min-width: 0;
 }
 
-.top-actions button,
-.top-actions summary {
+.top-actions button {
   padding: 0 12px;
 }
 
@@ -222,8 +221,8 @@ input[type='range'] {
   position: relative;
 }
 
-.template-picker > summary,
-.menu-group > summary {
+.template-picker > .menu-trigger,
+.menu-group > .menu-trigger {
   display: inline-flex;
   align-items: center;
   min-height: 34px;
@@ -235,6 +234,12 @@ input[type='range'] {
   cursor: pointer;
   font-size: 13px;
   white-space: nowrap;
+}
+
+.help-about-menu > .menu-trigger {
+  border-color: #8ba4bd;
+  background: #263a4b;
+  font-weight: 700;
 }
 
 .template-panel,
@@ -443,11 +448,14 @@ button.active,
   position: absolute;
   z-index: 9;
   top: 104px;
+  bottom: 16px;
   left: 16px;
   display: grid;
+  align-content: start;
   gap: 10px;
   width: 230px;
   padding: 12px;
+  overflow-y: auto;
   border-radius: 8px;
 }
 
@@ -469,9 +477,21 @@ button.active,
   text-transform: uppercase;
 }
 
+.simple-shapes-section {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(92, 112, 134, 0.42);
+}
+
+.shape-button-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.shape-button-grid button {
+  text-align: center;
+}
+
 .asset-library {
-  max-height: calc(100vh - 260px);
-  overflow-y: auto;
+  min-height: 0;
 }
 
 .asset-library details {
@@ -806,8 +826,8 @@ button.active,
     gap: 6px;
   }
 
-  .template-picker > summary,
-  .menu-group > summary {
+  .template-picker > .menu-trigger,
+  .menu-group > .menu-trigger {
     min-height: 32px;
     padding: 0 9px;
     font-size: 12px;

@@ -36,9 +36,11 @@ const screenshotSizes: Array<{ value: ScreenshotSize; label: string }> = [
 const BROWSER_PROJECT_WARNING_BYTES = 5 * 1024 * 1024;
 const LIVE_SITE_URL = 'https://studio.hallintegratedsystems.com';
 const formatScreenshotSize = (value: ScreenshotSize) => screenshotSizes.find((size) => size.value === value)?.label ?? value;
+type TopMenuId = 'templates' | 'scene' | 'camera' | 'view' | 'export' | 'project' | 'help';
 
 export function TopBar() {
   const loadInputRef = useRef<HTMLInputElement>(null);
+  const menuRefs = useRef<Partial<Record<TopMenuId, HTMLDivElement | null>>>({});
   const objects = useStudioStore((state) => state.objects);
   const projectTitle = useStudioStore((state) => state.projectTitle);
   const projectNotes = useStudioStore((state) => state.projectNotes);
@@ -70,9 +72,25 @@ export function TopBar() {
   const [browserProjects, setBrowserProjects] = useState<BrowserProjectRecord[]>([]);
   const [customPresets, setCustomPresets] = useState<CustomRenderPreset[]>([]);
   const [storageStatus, setStorageStatus] = useState('');
+  const [openMenu, setOpenMenu] = useState<TopMenuId | null>(null);
   const autosaveReadyRef = useRef(false);
 
   const buildCurrentProject = () => createProject(objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
+  const closeTopMenu = () => setOpenMenu(null);
+
+  useEffect(() => {
+    if (!openMenu) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const activeMenu = menuRefs.current[openMenu];
+      if (activeMenu && event.target instanceof Node && !activeMenu.contains(event.target)) {
+        setOpenMenu(null);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [openMenu]);
 
   const refreshBrowserData = async () => {
     try {
@@ -127,6 +145,12 @@ export function TopBar() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && openMenu) {
+        event.preventDefault();
+        setOpenMenu(null);
+        return;
+      }
+
       if (isEditableTarget(event.target)) return;
 
       const hasModifier = event.ctrlKey || event.metaKey;
@@ -316,19 +340,41 @@ export function TopBar() {
 
       <div className="top-actions">
         <TemplatePicker
+          menuId="templates"
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setMenuRef={(node) => {
+            menuRefs.current.templates = node;
+          }}
           onApply={(templateId) => {
             if (confirmReset('Create a new scene from this template')) {
               applyProjectTemplate(templateId);
+              closeTopMenu();
             }
           }}
         />
 
-        <MenuGroup title="Scene">
+        <MenuGroup
+          id="scene"
+          title="Scene"
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setMenuRef={(node) => {
+            menuRefs.current.scene = node;
+          }}
+        >
           <section className="menu-section">
             <h2>Scene Templates</h2>
             <div className="menu-button-grid">
               {Object.entries(sceneTemplates).map(([value, template]) => (
-                <button key={value} type="button" onClick={() => applySceneTemplate(value as keyof typeof sceneTemplates)}>
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    applySceneTemplate(value as keyof typeof sceneTemplates);
+                    closeTopMenu();
+                  }}
+                >
                   {template.label}
                 </button>
               ))}
@@ -338,7 +384,14 @@ export function TopBar() {
             <h2>Render Presets</h2>
             <div className="menu-button-grid">
               {Object.entries(productRenderPresets).map(([value, preset]) => (
-                <button key={value} type="button" onClick={() => applyProductRenderPreset(value as keyof typeof productRenderPresets)}>
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    applyProductRenderPreset(value as keyof typeof productRenderPresets);
+                    closeTopMenu();
+                  }}
+                >
                   {preset.label}
                 </button>
               ))}
@@ -376,7 +429,15 @@ export function TopBar() {
           </section>
         </MenuGroup>
 
-        <MenuGroup title="Camera">
+        <MenuGroup
+          id="camera"
+          title="Camera"
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setMenuRef={(node) => {
+            menuRefs.current.camera = node;
+          }}
+        >
           <section className="menu-section">
             <h2>Preset</h2>
             <div className="segmented-grid">
@@ -411,7 +472,15 @@ export function TopBar() {
           </div>
         </MenuGroup>
 
-        <MenuGroup title="View">
+        <MenuGroup
+          id="view"
+          title="View"
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setMenuRef={(node) => {
+            menuRefs.current.view = node;
+          }}
+        >
           <section className="menu-section">
             <h2>Background</h2>
             <div className="segmented-grid">
@@ -443,7 +512,15 @@ export function TopBar() {
           </div>
         </MenuGroup>
 
-        <MenuGroup title="Export">
+        <MenuGroup
+          id="export"
+          title="Export"
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setMenuRef={(node) => {
+            menuRefs.current.export = node;
+          }}
+        >
           <label className="field menu-field">
             <span>Size</span>
             <select value={settings.screenshotSize} onChange={(event) => updateSettings({ screenshotSize: event.target.value as ScreenshotSize })}>
@@ -463,21 +540,45 @@ export function TopBar() {
               aria-label="Export filename"
             />
           </label>
-          <button type="button" className="primary-action" onClick={requestExportScreenshot}>
+          <button
+            type="button"
+            className="primary-action"
+            onClick={() => {
+              requestExportScreenshot();
+              closeTopMenu();
+            }}
+          >
             Export PNG
           </button>
         </MenuGroup>
 
-        <MenuGroup title="Project">
+        <MenuGroup
+          id="project"
+          title="Project"
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setMenuRef={(node) => {
+            menuRefs.current.project = node;
+          }}
+        >
           <div className="menu-button-row">
             <button
               type="button"
               className="primary-action"
-              onClick={handleDownloadProject}
+              onClick={() => {
+                handleDownloadProject();
+                closeTopMenu();
+              }}
             >
               Save JSON File
             </button>
-            <button type="button" onClick={() => loadInputRef.current?.click()}>
+            <button
+              type="button"
+              onClick={() => {
+                loadInputRef.current?.click();
+                closeTopMenu();
+              }}
+            >
               Load JSON File
             </button>
           </div>
@@ -543,17 +644,29 @@ export function TopBar() {
           {storageStatus ? <p className="menu-note">{storageStatus}</p> : null}
         </MenuGroup>
 
-        <MenuGroup title="Help">
+        <MenuGroup
+          id="help"
+          title="Help / About"
+          className="help-about-menu"
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          setMenuRef={(node) => {
+            menuRefs.current.help = node;
+          }}
+        >
           <section className="menu-section">
             <h2>About</h2>
-            <p className="menu-note">Hall Product Studio v{APP_VERSION}</p>
+            <p className="menu-note">
+              <strong>Hall Product Studio</strong>
+            </p>
+            <p className="menu-note">Version: {APP_VERSION}</p>
             <p className="menu-note">
               Live site: <a href={LIVE_SITE_URL}>{LIVE_SITE_URL}</a>
             </p>
           </section>
           <section className="menu-section">
             <h2>Supported Imports</h2>
-            <p className="menu-note">Models: .glb and self-contained .gltf. Images: PNG, JPG/JPEG, and WEBP.</p>
+            <p className="menu-note">Models: GLB and self-contained GLTF. Images: PNG, JPG, JPEG, and WEBP. Projects: JSON project files.</p>
           </section>
           <section className="menu-section">
             <h2>Export Sizes</h2>
@@ -568,6 +681,13 @@ export function TopBar() {
           <section className="menu-section">
             <h2>Shortcuts</h2>
             <p className="menu-note">Delete removes the selected object. Ctrl/Cmd+S saves to browser. Ctrl/Cmd+E exports PNG. Escape deselects.</p>
+          </section>
+          <section className="menu-section">
+            <h2>Known Limitations</h2>
+            <p className="menu-note">
+              This is a product staging and mockup tool, not CAD. Multi-file GLTF texture relinking, STL editing, slicing, advanced offline rendering,
+              and cloud sync are intentionally out of scope.
+            </p>
           </section>
         </MenuGroup>
 
@@ -598,23 +718,59 @@ function isEditableTarget(target: EventTarget | null) {
   return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || target.isContentEditable;
 }
 
-function MenuGroup({ title, children }: { title: string; children: ReactNode }) {
+function MenuGroup({
+  id,
+  title,
+  children,
+  className = '',
+  openMenu,
+  setOpenMenu,
+  setMenuRef,
+}: {
+  id: TopMenuId;
+  title: string;
+  children: ReactNode;
+  className?: string;
+  openMenu: TopMenuId | null;
+  setOpenMenu: (menu: TopMenuId | null) => void;
+  setMenuRef: (node: HTMLDivElement | null) => void;
+}) {
+  const isOpen = openMenu === id;
+
   return (
-    <details className="menu-group">
-      <summary>{title}</summary>
-      <div className="menu-panel">{children}</div>
-    </details>
+    <div className={`menu-group ${className}`.trim()} ref={setMenuRef}>
+      <button type="button" className="menu-trigger" aria-expanded={isOpen} onClick={() => setOpenMenu(isOpen ? null : id)}>
+        {title}
+      </button>
+      {isOpen && <div className="menu-panel">{children}</div>}
+    </div>
   );
 }
 
-function TemplatePicker({ onApply }: { onApply: (templateId: ProjectTemplateId) => void }) {
+function TemplatePicker({
+  menuId,
+  openMenu,
+  setOpenMenu,
+  setMenuRef,
+  onApply,
+}: {
+  menuId: TopMenuId;
+  openMenu: TopMenuId | null;
+  setOpenMenu: (menu: TopMenuId | null) => void;
+  setMenuRef: (node: HTMLDivElement | null) => void;
+  onApply: (templateId: ProjectTemplateId) => void;
+}) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<ProjectTemplateId>('blank-studio');
   const selectedTemplate = projectTemplates.find((template) => template.id === selectedTemplateId) ?? projectTemplates[0];
+  const isOpen = openMenu === menuId;
 
   return (
-    <details className="template-picker">
-      <summary>Templates</summary>
-      <div className="template-panel">
+    <div className="template-picker" ref={setMenuRef}>
+      <button type="button" className="menu-trigger" aria-expanded={isOpen} onClick={() => setOpenMenu(isOpen ? null : menuId)}>
+        Templates
+      </button>
+      {isOpen && (
+        <div className="template-panel">
         <div className="menu-section">
           <h2>New From Template</h2>
         </div>
@@ -636,6 +792,7 @@ function TemplatePicker({ onApply }: { onApply: (templateId: ProjectTemplateId) 
           Apply Template
         </button>
       </div>
-    </details>
+      )}
+    </div>
   );
 }

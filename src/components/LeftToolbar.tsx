@@ -38,6 +38,11 @@ export function LeftToolbar() {
   const importedImageHistory = useStudioStore((state) => state.importedImageHistory);
   const pushToast = useStudioStore((state) => state.pushToast);
 
+  const handleAddPrimitive = (kind: PrimitiveKind, label: string) => {
+    addPrimitive(kind);
+    pushToast(`${label} added.`, 'success');
+  };
+
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -89,15 +94,63 @@ export function LeftToolbar() {
 
   return (
     <aside className="left-toolbar" aria-label="Add objects">
+      <section className="toolbar-section simple-shapes-section">
+        <h2>Simple Shapes</h2>
+        <div className="toolbar-group shape-button-grid">
+          {primitiveButtons.map((button) => (
+            <button key={button.kind} type="button" onClick={() => handleAddPrimitive(button.kind, button.label)}>
+              {button.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="toolbar-section asset-library">
+        <h2>Asset Library</h2>
+        {assetCategories
+          .filter((category) => category !== 'Image / Decal')
+          .map((category) => {
+            const builtIns = builtInAssets.filter((asset) => asset.category === category);
+            const imported = category === 'Imported Models' ? importedAssetHistory : [];
+            if (builtIns.length === 0 && imported.length === 0) return null;
+
+            return (
+              <details key={category} open={category !== 'Imported Models'}>
+                <summary>{category}</summary>
+                <div className="toolbar-group">
+                  {builtIns.map((asset) => (
+                    <button key={asset.id} type="button" onClick={() => addBuiltInAsset(asset.id)}>
+                      {asset.name}
+                    </button>
+                  ))}
+                  {imported.map((asset) => (
+                    <button key={asset.id} type="button" onClick={() => addImportedAsset(asset.id)}>
+                      {asset.name}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            );
+          })}
+      </section>
+
       <section className="toolbar-section">
-        <h2>Primitives</h2>
-      <div className="toolbar-group">
-        {primitiveButtons.map((button) => (
-          <button key={button.kind} type="button" onClick={() => addPrimitive(button.kind)}>
-            {button.label}
-          </button>
-        ))}
-      </div>
+        <h2>Image / Decal</h2>
+        <button type="button" className="import-button" onClick={() => imageInputRef.current?.click()}>
+          Import Image
+        </button>
+        <div className="toolbar-group">
+          {imageDecalAssets.map((asset) => (
+            <button key={asset.id} type="button" onClick={() => addImageDecalAsset(asset.id)}>
+              {asset.name}
+            </button>
+          ))}
+          {importedImageHistory.map((asset) => (
+            <button key={asset.id} type="button" onClick={() => addImportedImage(asset.id)}>
+              {asset.name}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="toolbar-section">
@@ -111,50 +164,11 @@ export function LeftToolbar() {
         </div>
       </section>
 
-      <button type="button" className="import-button" onClick={() => importInputRef.current?.click()}>
-        Import GLB/GLTF
-      </button>
-      <button type="button" className="import-button" onClick={() => imageInputRef.current?.click()}>
-        Import Image
-      </button>
-
-      <section className="toolbar-section asset-library">
-        <h2>Asset Library</h2>
-        {assetCategories.map((category) => {
-          const builtIns = builtInAssets.filter((asset) => asset.category === category);
-          const imported = category === 'Imported Models' ? importedAssetHistory : [];
-          const imageDecals = category === 'Image / Decal' ? imageDecalAssets : [];
-          const importedImages = category === 'Image / Decal' ? importedImageHistory : [];
-          if (builtIns.length === 0 && imported.length === 0 && imageDecals.length === 0 && importedImages.length === 0) return null;
-
-          return (
-            <details key={category} open={category !== 'Imported Models'}>
-              <summary>{category}</summary>
-              <div className="toolbar-group">
-                {builtIns.map((asset) => (
-                  <button key={asset.id} type="button" onClick={() => addBuiltInAsset(asset.id)}>
-                    {asset.name}
-                  </button>
-                ))}
-                {imageDecals.map((asset) => (
-                  <button key={asset.id} type="button" onClick={() => addImageDecalAsset(asset.id)}>
-                    {asset.name}
-                  </button>
-                ))}
-                {importedImages.map((asset) => (
-                  <button key={asset.id} type="button" onClick={() => addImportedImage(asset.id)}>
-                    {asset.name}
-                  </button>
-                ))}
-                {imported.map((asset) => (
-                  <button key={asset.id} type="button" onClick={() => addImportedAsset(asset.id)}>
-                    {asset.name}
-                  </button>
-                ))}
-              </div>
-            </details>
-          );
-        })}
+      <section className="toolbar-section">
+        <h2>Import</h2>
+        <button type="button" className="import-button" onClick={() => importInputRef.current?.click()}>
+          Import GLB/GLTF
+        </button>
       </section>
 
       <input
