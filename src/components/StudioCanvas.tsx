@@ -6,7 +6,16 @@ import type { Mesh, MeshStandardMaterial, Object3D, Quaternion } from 'three';
 import { Box3, Box3Helper, Color, DoubleSide, FrontSide, Group, TextureLoader, Vector2, Vector3 } from 'three';
 import { ObjectTransformControls } from './ObjectTransformControls';
 import { useStudioStore } from '../state/studioStore';
-import type { AnnotationData, CameraPreset, PrimitiveKind, StudioAssetPart, StudioMaterial, StudioObject, Vec3 } from '../types/studioTypes';
+import type {
+  AnnotationData,
+  CameraPreset,
+  MountingHelperData,
+  PrimitiveKind,
+  StudioAssetPart,
+  StudioMaterial,
+  StudioObject,
+  Vec3,
+} from '../types/studioTypes';
 import { downloadDataUrl, getScreenshotDimensions } from '../utils/exportScreenshot';
 
 export function StudioCanvas() {
@@ -170,12 +179,150 @@ function ObjectGeometry({ object, shadowsEnabled }: { object: StudioObject; shad
     return <AnnotationObject annotation={object.annotation} />;
   }
 
+  if (object.kind === 'mounting-helper' && object.mountingHelper) {
+    return <MountingHelperObject object={object} helper={object.mountingHelper} shadowsEnabled={shadowsEnabled} />;
+  }
+
   return (
     <mesh castShadow={shadowsEnabled} receiveShadow={shadowsEnabled}>
       <PrimitiveGeometry kind={object.kind as PrimitiveKind} />
       <meshStandardMaterial {...materialProps} />
     </mesh>
   );
+}
+
+function MountingHelperObject({
+  object,
+  helper,
+  shadowsEnabled,
+}: {
+  object: StudioObject;
+  helper: MountingHelperData;
+  shadowsEnabled: boolean;
+}) {
+  const color = object.material.color;
+  const opacity = object.material.opacity;
+  const transparent = opacity < 1;
+
+  if (helper.kind === 'round-hole') {
+    return (
+      <group>
+        <mesh>
+          <ringGeometry args={[helper.diameter * 0.32, helper.diameter * 0.5, 64]} />
+          <HelperBasicMaterial color={color} opacity={opacity} />
+        </mesh>
+        <mesh>
+          <circleGeometry args={[helper.diameter * 0.12, 32]} />
+          <meshBasicMaterial color="#f7f9fb" opacity={Math.min(opacity + 0.05, 1)} transparent side={DoubleSide} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (helper.kind === 'slotted-hole') {
+    return (
+      <group>
+        <mesh>
+          <planeGeometry args={[helper.slotLength, helper.slotWidth]} />
+          <HelperBasicMaterial color={color} opacity={opacity} />
+        </mesh>
+        <mesh position={[-helper.slotLength / 2, 0, 0.002]}>
+          <circleGeometry args={[helper.slotWidth / 2, 32]} />
+          <HelperBasicMaterial color={color} opacity={opacity} />
+        </mesh>
+        <mesh position={[helper.slotLength / 2, 0, 0.002]}>
+          <circleGeometry args={[helper.slotWidth / 2, 32]} />
+          <HelperBasicMaterial color={color} opacity={opacity} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (helper.kind === 'washer') {
+    return (
+      <group>
+        <mesh>
+          <ringGeometry args={[helper.diameter * 0.24, helper.diameter * 0.5, 64]} />
+          <HelperBasicMaterial color={color} opacity={opacity} />
+        </mesh>
+        <mesh>
+          <circleGeometry args={[helper.diameter * 0.18, 32]} />
+          <meshBasicMaterial color="#11151c" opacity={0.78} transparent side={DoubleSide} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (helper.kind === 'rivnut') {
+    return (
+      <group>
+        <mesh>
+          <ringGeometry args={[helper.diameter * 0.28, helper.diameter * 0.5, 48]} />
+          <HelperBasicMaterial color={color} opacity={opacity} />
+        </mesh>
+        <mesh>
+          <ringGeometry args={[helper.diameter * 0.1, helper.diameter * 0.18, 32]} />
+          <meshBasicMaterial color="#11151c" opacity={0.82} transparent side={DoubleSide} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (helper.kind === 'standoff') {
+    return (
+      <group>
+        <mesh position={[0, helper.standoffHeight / 2, 0]} castShadow={shadowsEnabled} receiveShadow={shadowsEnabled}>
+          <cylinderGeometry args={[helper.diameter / 2, helper.diameter / 2, helper.standoffHeight, 40]} />
+          <meshStandardMaterial color={color} roughness={object.material.roughness} metalness={object.material.metalness} opacity={opacity} transparent={transparent} />
+        </mesh>
+        <mesh position={[0, helper.standoffHeight + 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[helper.diameter * 0.16, helper.diameter * 0.32, 32]} />
+          <meshBasicMaterial color="#11151c" opacity={0.72} transparent side={DoubleSide} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (helper.kind === 'bolt-head') {
+    return (
+      <group>
+        <mesh castShadow={shadowsEnabled} receiveShadow={shadowsEnabled}>
+          <cylinderGeometry args={[helper.diameter / 2, helper.diameter / 2, 0.08, 6]} />
+          <meshStandardMaterial color={color} roughness={object.material.roughness} metalness={object.material.metalness} opacity={opacity} transparent={transparent} />
+        </mesh>
+        <mesh position={[0, 0.045, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[helper.diameter * 0.72, helper.diameter * 0.1]} />
+          <meshBasicMaterial color="#11151c" opacity={0.7} transparent side={DoubleSide} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (helper.kind === 'centerline') {
+    return (
+      <group>
+        <mesh>
+          <planeGeometry args={[helper.slotLength, helper.slotWidth]} />
+          <HelperBasicMaterial color={color} opacity={opacity} />
+        </mesh>
+        <mesh rotation={[0, 0, Math.PI / 2]}>
+          <planeGeometry args={[helper.diameter * 0.75, helper.slotWidth]} />
+          <HelperBasicMaterial color={color} opacity={opacity} />
+        </mesh>
+      </group>
+    );
+  }
+
+  return (
+    <mesh castShadow={false} receiveShadow={false}>
+      <boxGeometry args={helper.clearanceSize} />
+      <meshBasicMaterial color={color} opacity={opacity} transparent side={DoubleSide} />
+    </mesh>
+  );
+}
+
+function HelperBasicMaterial({ color, opacity }: { color: string; opacity: number }) {
+  return <meshBasicMaterial color={color} opacity={opacity} transparent={opacity < 1} side={DoubleSide} />;
 }
 
 function AnnotationObject({ annotation }: { annotation: AnnotationData }) {
@@ -502,12 +649,16 @@ function HighResolutionExporter() {
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
   const pushToast = useStudioStore((state) => state.pushToast);
+  const completeExportScreenshot = useStudioStore((state) => state.completeExportScreenshot);
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const camera = useThree((state) => state.camera);
+  const lastProcessedExportToken = useRef(0);
 
   useEffect(() => {
     if (exportRequestToken === 0) return;
+    if (lastProcessedExportToken.current === exportRequestToken) return;
+    lastProcessedExportToken.current = exportRequestToken;
 
     const canvas = gl.domElement;
     const target = getScreenshotDimensions(settings.screenshotSize, canvas);
@@ -540,8 +691,20 @@ function HighResolutionExporter() {
       }
 
       gl.render(scene, camera);
+      completeExportScreenshot();
     }
-  }, [camera, exportRequestToken, gl, pushToast, scene, selectedObject?.name, settings.exportFileName, settings.exportFileNameEdited, settings.screenshotSize]);
+  }, [
+    camera,
+    completeExportScreenshot,
+    exportRequestToken,
+    gl,
+    pushToast,
+    scene,
+    selectedObject?.name,
+    settings.exportFileName,
+    settings.exportFileNameEdited,
+    settings.screenshotSize,
+  ]);
 
   return null;
 }

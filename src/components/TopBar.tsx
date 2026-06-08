@@ -62,6 +62,7 @@ export function TopBar() {
   const setCameraDistance = useStudioStore((state) => state.setCameraDistance);
   const requestFrame = useStudioStore((state) => state.requestFrame);
   const requestExportScreenshot = useStudioStore((state) => state.requestExportScreenshot);
+  const isExporting = useStudioStore((state) => state.isExporting);
   const applySceneTemplate = useStudioStore((state) => state.applySceneTemplate);
   const applyProductRenderPreset = useStudioStore((state) => state.applyProductRenderPreset);
   const updateSettings = useStudioStore((state) => state.updateSettings);
@@ -77,6 +78,10 @@ export function TopBar() {
 
   const buildCurrentProject = () => createProject(objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
   const closeTopMenu = () => setOpenMenu(null);
+  const handleRequestExport = (event?: { currentTarget?: { blur: () => void } }) => {
+    requestExportScreenshot();
+    event?.currentTarget?.blur();
+  };
 
   useEffect(() => {
     if (!openMenu) return;
@@ -543,12 +548,13 @@ export function TopBar() {
           <button
             type="button"
             className="primary-action"
-            onClick={() => {
-              requestExportScreenshot();
+            disabled={isExporting}
+            onClick={(event) => {
+              handleRequestExport(event);
               closeTopMenu();
             }}
           >
-            Export PNG
+            {isExporting ? 'Exporting...' : 'Export PNG'}
           </button>
         </MenuGroup>
 
@@ -692,8 +698,8 @@ export function TopBar() {
         </MenuGroup>
 
         <div className="quick-actions" aria-label="Quick actions">
-          <button type="button" className="primary-action" onClick={requestExportScreenshot}>
-            Export PNG
+          <button type="button" className="primary-action" onClick={handleRequestExport} disabled={isExporting}>
+            {isExporting ? 'Exporting...' : 'Export PNG'}
           </button>
           <button
             type="button"

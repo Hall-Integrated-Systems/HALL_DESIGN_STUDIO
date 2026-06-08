@@ -45,6 +45,7 @@ npm run build
 - Image planes and decals for PNG, JPG/JPEG, and WEBP
 - Transparent PNG logo/label support
 - Annotation objects: text labels, arrows, dimension lines, and marker dots
+- Mounting Helpers for visual hole, slot, washer, rivnut, standoff, bolt-head, centerline, and clearance planning
 - Object selection, transform controls, duplicate, delete, lock, and visibility
 - Material controls with color, roughness, metalness, and opacity
 - Hall Integrated Systems brand color presets
@@ -77,6 +78,10 @@ Use Photoshop Cutout or Transparent Cutout, hide floor/grid/shadows, use transpa
 
 Start from a project template or Asset Library components, add the product model, add decals/annotations, save to browser storage for active work, then export a JSON backup.
 
+### Bracket and Amp-Mount Planning
+
+Use Mounting Helpers in the left toolbar to place visual round holes, slotted holes, washers, rivnuts, standoffs, bolt heads, centerlines, and clearance zones over brackets or plates. These markers are for layout renders and fabrication notes only; verify real-world hole sizes, spacing, edge distance, fastener clearances, and material requirements before drilling or cutting.
+
 ## Export Sizes
 
 - `1200x1200`: product tiles and square catalog cards
@@ -107,4 +112,5 @@ The app is built with Vite and deployed as static files through Azure Static Web
 - Export important work as JSON files.
 - Prefer self-contained `.glb` models over external-file `.gltf` packages.
 - Large image planes and model data can increase browser storage, project JSON size, and export time.
+- Mounting helpers are visual planning markers only and do not cut geometry or validate hardware fit.
 - The production build currently emits an expected large Three.js bundle warning.

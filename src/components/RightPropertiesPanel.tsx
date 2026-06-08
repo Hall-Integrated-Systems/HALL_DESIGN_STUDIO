@@ -101,6 +101,8 @@ export function RightPropertiesPanel() {
         <ImagePlanePanel object={selectedObject} onUpdate={updateObject} />
       ) : selectedObject.kind === 'annotation' && selectedObject.annotation ? (
         <AnnotationPanel object={selectedObject} onUpdate={updateObject} />
+      ) : selectedObject.kind === 'mounting-helper' && selectedObject.mountingHelper ? (
+        <MountingHelperPanel object={selectedObject} onUpdate={updateObject} onUpdateMaterial={updateObjectMaterial} />
       ) : (
         <MaterialPanel object={selectedObject} onUpdateMaterial={updateObjectMaterial} />
       )}
@@ -114,6 +116,97 @@ export function RightPropertiesPanel() {
         </button>
       </div>
     </aside>
+  );
+}
+
+function MountingHelperPanel({
+  object,
+  onUpdate,
+  onUpdateMaterial,
+}: {
+  object: StudioObject;
+  onUpdate: (id: string, patch: Partial<StudioObject>) => void;
+  onUpdateMaterial: (id: string, material: Partial<StudioObject['material']>) => void;
+}) {
+  const helper = object.mountingHelper;
+  if (!helper) return null;
+
+  const updateHelper = (patch: Partial<typeof helper>) => {
+    onUpdate(object.id, { mountingHelper: { ...helper, ...patch } });
+  };
+
+  const setClearanceValue = (axisIndex: number, rawValue: string) => {
+    const value = Number(rawValue);
+    if (!Number.isFinite(value)) return;
+    const next = [...helper.clearanceSize] as Vec3;
+    next[axisIndex] = value;
+    updateHelper({ clearanceSize: next });
+  };
+
+  return (
+    <section className="panel-section">
+      <h3>Mounting Helper</h3>
+      <p className="list-empty">Visual planning marker only. This does not cut or modify geometry.</p>
+      <label className="field color-field">
+        <span>Color</span>
+        <input type="color" value={object.material.color} onChange={(event) => onUpdateMaterial(object.id, { color: event.target.value })} />
+      </label>
+      <RangeField
+        label="Opacity"
+        value={object.material.opacity}
+        onChange={(event) => onUpdateMaterial(object.id, { opacity: Number(event.target.value) })}
+      />
+
+      {helper.kind !== 'centerline' && helper.kind !== 'clearance-zone' && (
+        <RangeField label="Diameter" value={helper.diameter} min={0.05} max={2} step={0.01} onChange={(event) => updateHelper({ diameter: Number(event.target.value) })} />
+      )}
+
+      {(helper.kind === 'slotted-hole' || helper.kind === 'centerline') && (
+        <>
+          <RangeField
+            label={helper.kind === 'centerline' ? 'Line Length' : 'Slot Length'}
+            value={helper.slotLength}
+            min={0.1}
+            max={4}
+            step={0.01}
+            onChange={(event) => updateHelper({ slotLength: Number(event.target.value) })}
+          />
+          <RangeField
+            label={helper.kind === 'centerline' ? 'Line Width' : 'Slot Width'}
+            value={helper.slotWidth}
+            min={0.01}
+            max={1}
+            step={0.01}
+            onChange={(event) => updateHelper({ slotWidth: Number(event.target.value) })}
+          />
+        </>
+      )}
+
+      {helper.kind === 'standoff' && (
+        <RangeField
+          label="Height"
+          value={helper.standoffHeight}
+          min={0.05}
+          max={3}
+          step={0.01}
+          onChange={(event) => updateHelper({ standoffHeight: Number(event.target.value) })}
+        />
+      )}
+
+      {helper.kind === 'clearance-zone' && (
+        <section className="panel-section nested-section">
+          <h3>Clearance Size</h3>
+          <div className="vector-grid">
+            {axes.map((axis, index) => (
+              <label key={axis} className="field compact-field">
+                <span>{axis}</span>
+                <input type="number" min={0.01} step={0.1} value={Number(helper.clearanceSize[index].toFixed(3))} onChange={(event) => setClearanceValue(index, event.target.value)} />
+              </label>
+            ))}
+          </div>
+        </section>
+      )}
+    </section>
   );
 }
 
@@ -400,6 +493,7 @@ function ObjectList({
 }
 
 function getObjectTypeLabel(object: StudioObject) {
+  if (object.kind === 'mounting-helper') return 'Mounting Helper';
   if (object.kind === 'annotation') return 'Annotation';
   if (object.assetCategory) return object.assetCategory;
   if (object.kind === 'model') return 'Imported Model';

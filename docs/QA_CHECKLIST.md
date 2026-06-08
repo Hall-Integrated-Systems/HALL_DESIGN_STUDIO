@@ -47,6 +47,15 @@ Use this checklist before release or after deployment.
 - Confirm annotation-specific controls work in the right panel.
 - Confirm annotations appear in exported PNG output.
 
+## Mounting Helpers
+
+- Add each Mounting Helper from the left toolbar.
+- Confirm Round Hole, Slot, Washer, Rivnut, Standoff, Bolt Head, Centerline, and Clearance Zone markers appear in the scene object list.
+- Select a helper and confirm transform, color, opacity, lock, and visibility controls work.
+- Duplicate a Round Hole marker and confirm the duplicate is offset and visible.
+- Save a project with mounting helpers to JSON, reload it, and confirm helpers restore.
+- Export a PNG and confirm visible mounting helpers appear in the render.
+
 ## Browser Save/Open
 
 - Create a small scene.

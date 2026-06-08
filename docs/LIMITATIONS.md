@@ -10,6 +10,8 @@ The app is for arranging existing models, primitives, labels, annotations, and r
 
 Dimension lines are visual annotations for product concepts, explainers, and mockups. They are not CAD measurements and should not be used as manufacturing references. Auto-length displays scene-unit distance between annotation points.
 
+Mounting helpers are also visual planning markers only. Round hole, slot, washer, rivnut, standoff, bolt-head, centerline, and clearance-zone markers do not cut geometry, validate fit, calculate edge distances, or replace fabrication drawings. Verify real-world hole sizes, fastener specifications, clearances, and material requirements before drilling or cutting.
+
 ## GLB Preferred
 
 Self-contained `.glb` files are the most reliable import format. `.gltf` files that depend on external `.bin` files or texture paths may fail or reload incorrectly unless those dependencies are embedded or otherwise available to the browser.

@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.1.0
+
+- Added Mounting Helpers for visual fabrication planning.
+- Added one-click markers for round holes, slotted holes, washers, rivnuts, standoffs, bolt heads, centerlines, and clearance zones.
+- Added helper-specific right-panel controls for color, opacity, and practical dimensions where applicable.
+- Mounting helpers save/load with project JSON and export in PNG renders when visible.
+
 ## v2.0.0
 
 Release hardening pass for Hall Product Studio. Adds release documentation, deployment notes, QA checklist, limitations documentation, and a cleaner README. The app version shown in Help / About is now `2.0.0`.

@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useStudioStore } from '../state/studioStore';
 import type { AnnotationKind, PrimitiveKind } from '../types/studioTypes';
 import { assetCategories, builtInAssets, imageDecalAssets } from '../config/assets';
+import { mountingHelpers } from '../config/mountingHelpers';
 
 const primitiveButtons: Array<{ kind: PrimitiveKind; label: string }> = [
   { kind: 'cube', label: 'Cube' },
@@ -28,6 +29,7 @@ export function LeftToolbar() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const addPrimitive = useStudioStore((state) => state.addPrimitive);
   const addAnnotation = useStudioStore((state) => state.addAnnotation);
+  const addMountingHelper = useStudioStore((state) => state.addMountingHelper);
   const addModel = useStudioStore((state) => state.addModel);
   const addImagePlane = useStudioStore((state) => state.addImagePlane);
   const addBuiltInAsset = useStudioStore((state) => state.addBuiltInAsset);
@@ -132,6 +134,24 @@ export function LeftToolbar() {
               </details>
             );
           })}
+      </section>
+
+      <section className="toolbar-section">
+        <h2>Mounting Helpers</h2>
+        <div className="toolbar-group">
+          {mountingHelpers.map((helper) => (
+            <button
+              key={helper.kind}
+              type="button"
+              onClick={() => {
+                addMountingHelper(helper.kind);
+                pushToast(`${helper.baseName} added.`, 'success');
+              }}
+            >
+              {helper.label}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="toolbar-section">

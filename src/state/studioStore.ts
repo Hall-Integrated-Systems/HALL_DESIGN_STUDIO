@@ -4,6 +4,7 @@ import type {
   BackgroundMode,
   CameraPreset,
   FrameTarget,
+  MountingHelperKind,
   PrimitiveKind,
   ProductRenderPreset,
   ProjectTemplateId,
@@ -20,6 +21,7 @@ import type {
 import { productRenderPresets, sceneTemplates } from '../config/presets';
 import { builtInAssets, imageDecalAssets } from '../config/assets';
 import { getProjectTemplate } from '../config/projectTemplates';
+import { getMountingHelperDefinition } from '../config/mountingHelpers';
 
 interface ImportedAssetHistoryItem {
   id: string;
@@ -52,12 +54,14 @@ interface StudioState {
   cameraResetToken: number;
   frameRequest: { target: FrameTarget; token: number } | null;
   exportRequestToken: number;
+  isExporting: boolean;
   settings: StudioSettings;
   toasts: StudioToast[];
   addPrimitive: (kind: PrimitiveKind) => void;
   addModel: (fileName: string, modelDataUrl: string) => void;
   addImagePlane: (fileName: string, imageDataUrl: string, width: number, height: number) => void;
   addAnnotation: (kind: AnnotationKind) => void;
+  addMountingHelper: (kind: MountingHelperKind) => void;
   addBuiltInAsset: (assetId: string) => void;
   addImageDecalAsset: (assetId: string) => void;
   addImportedAsset: (assetId: string) => void;
@@ -78,6 +82,7 @@ interface StudioState {
   resetCamera: () => void;
   requestFrame: (target: FrameTarget) => void;
   requestExportScreenshot: () => void;
+  completeExportScreenshot: () => void;
   pushToast: (message: string, tone?: ToastTone) => void;
   dismissToast: (id: string) => void;
   applySceneTemplate: (template: SceneTemplate) => void;
@@ -193,6 +198,16 @@ const withObjectDefaults = (object: StudioObject): StudioObject => ({
         autoLength: object.annotation.autoLength ?? true,
       }
     : undefined,
+  mountingHelper: object.mountingHelper
+    ? {
+        kind: object.mountingHelper.kind ?? 'round-hole',
+        diameter: object.mountingHelper.diameter ?? 0.42,
+        slotLength: object.mountingHelper.slotLength ?? 0.9,
+        slotWidth: object.mountingHelper.slotWidth ?? 0.28,
+        standoffHeight: object.mountingHelper.standoffHeight ?? 0.65,
+        clearanceSize: object.mountingHelper.clearanceSize ?? [1.4, 0.05, 1.1],
+      }
+    : undefined,
   parts: object.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
 });
 
@@ -211,6 +226,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   cameraResetToken: 0,
   frameRequest: null,
   exportRequestToken: 0,
+  isExporting: false,
   settings: DEFAULT_SETTINGS,
   toasts: [],
 
@@ -315,6 +331,36 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         arrowLength: 1,
         arrowAngle: 0,
         autoLength: kind === 'dimension-line',
+      },
+      locked: false,
+      visible: true,
+    };
+
+    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
+  },
+
+  addMountingHelper: (kind) => {
+    const definition = getMountingHelperDefinition(kind);
+    if (!definition) return;
+
+    const count = get().objects.filter((object) => object.mountingHelper?.kind === kind).length + 1;
+    const isFlatHelper = kind !== 'standoff' && kind !== 'bolt-head';
+    const object: StudioObject = {
+      id: makeId(),
+      name: `${definition.baseName} ${count}`,
+      kind: 'mounting-helper',
+      assetCategory: 'Mounting Helpers',
+      position: kind === 'standoff' ? [0, definition.standoffHeight / 2, 0] : [0, 0.04, 0],
+      rotation: isFlatHelper ? [-Math.PI / 2, 0, 0] : [0, 0, 0],
+      scale: [1, 1, 1],
+      material: { ...definition.material },
+      mountingHelper: {
+        kind,
+        diameter: definition.diameter,
+        slotLength: definition.slotLength,
+        slotWidth: definition.slotWidth,
+        standoffHeight: definition.standoffHeight,
+        clearanceSize: [...definition.clearanceSize],
       },
       locked: false,
       visible: true,
@@ -494,6 +540,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       material: { ...selected.material },
       imagePlane: selected.imagePlane ? { ...selected.imagePlane } : undefined,
       annotation: selected.annotation ? { ...selected.annotation } : undefined,
+      mountingHelper: selected.mountingHelper ? { ...selected.mountingHelper, clearanceSize: [...selected.mountingHelper.clearanceSize] } : undefined,
       parts: selected.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
     };
     set((state) => ({ objects: [...state.objects, duplicate], selectedObjectId: duplicate.id, isDirty: true }));
@@ -504,7 +551,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setCameraDistance: (distance) => set((state) => ({ cameraDistance: distance, cameraResetToken: state.cameraResetToken + 1, isDirty: true })),
   resetCamera: () => set((state) => ({ cameraPreset: 'isometric', cameraDistance: 6, cameraResetToken: state.cameraResetToken + 1, isDirty: true })),
   requestFrame: (target) => set((state) => ({ frameRequest: { target, token: (state.frameRequest?.token ?? 0) + 1 } })),
-  requestExportScreenshot: () => set((state) => ({ exportRequestToken: state.exportRequestToken + 1 })),
+  requestExportScreenshot: () =>
+    set((state) => {
+      if (state.isExporting) return state;
+      return { exportRequestToken: state.exportRequestToken + 1, isExporting: true };
+    }),
+  completeExportScreenshot: () => set({ isExporting: false }),
   pushToast: (message, tone = 'info') => {
     const id = makeId();
     set((state) => ({ toasts: [...state.toasts.slice(-3), { id, message, tone }] }));

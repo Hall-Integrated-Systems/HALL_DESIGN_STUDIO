@@ -1,10 +1,27 @@
 export type PrimitiveKind = 'cube' | 'cylinder' | 'sphere' | 'plane';
 
-export type AssetCategory = 'Logos' | 'Product Parts' | 'Fixtures / Stands' | 'Background Props' | 'Image / Decal' | 'Imported Models';
+export type AssetCategory =
+  | 'Logos'
+  | 'Product Parts'
+  | 'Fixtures / Stands'
+  | 'Background Props'
+  | 'Image / Decal'
+  | 'Mounting Helpers'
+  | 'Imported Models';
 
-export type StudioObjectKind = PrimitiveKind | 'model' | 'asset' | 'image' | 'annotation';
+export type StudioObjectKind = PrimitiveKind | 'model' | 'asset' | 'image' | 'annotation' | 'mounting-helper';
 
 export type AnnotationKind = 'text-label' | 'arrow-callout' | 'dimension-line' | 'marker-dot';
+
+export type MountingHelperKind =
+  | 'round-hole'
+  | 'slotted-hole'
+  | 'washer'
+  | 'rivnut'
+  | 'standoff'
+  | 'bolt-head'
+  | 'centerline'
+  | 'clearance-zone';
 
 export type TransformMode = 'translate' | 'rotate' | 'scale';
 
@@ -61,6 +78,7 @@ export interface StudioObject {
   material: StudioMaterial;
   imagePlane?: ImagePlaneData;
   annotation?: AnnotationData;
+  mountingHelper?: MountingHelperData;
   locked: boolean;
   visible: boolean;
   modelDataUrl?: string;
@@ -92,6 +110,15 @@ export interface ImagePlaneData {
   preserveAspectRatio: boolean;
   tintColor: string;
   placeholder: boolean;
+}
+
+export interface MountingHelperData {
+  kind: MountingHelperKind;
+  diameter: number;
+  slotLength: number;
+  slotWidth: number;
+  standoffHeight: number;
+  clearanceSize: Vec3;
 }
 
 export interface StudioAssetPart {
