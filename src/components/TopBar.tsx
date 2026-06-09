@@ -502,6 +502,18 @@ export function TopBar() {
             </div>
           </section>
           <div className="menu-toggle-grid">
+            <label className="field menu-field menu-wide-field">
+              <span>Selection</span>
+              <select
+                value={settings.selectionMode}
+                onChange={(event) =>
+                  updateSettings({ selectionMode: event.target.value === 'panel-select-only' ? 'panel-select-only' : 'canvas-select-move' })
+                }
+              >
+                <option value="canvas-select-move">Canvas Select + Move</option>
+                <option value="panel-select-only">Panel Select Only</option>
+              </select>
+            </label>
             <label className="toggle-control">
               <input type="checkbox" checked={settings.floorVisible} onChange={(event) => updateSettings({ floorVisible: event.target.checked })} />
               Floor
@@ -513,6 +525,22 @@ export function TopBar() {
             <label className="toggle-control">
               <input type="checkbox" checked={settings.shadowsEnabled} onChange={(event) => updateSettings({ shadowsEnabled: event.target.checked })} />
               Shadows
+            </label>
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={settings.ignoreLockedObjectsInCanvasSelection}
+                onChange={(event) => updateSettings({ ignoreLockedObjectsInCanvasSelection: event.target.checked })}
+              />
+              Ignore locked objects in canvas selection
+            </label>
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={settings.axisHelperVisible}
+                onChange={(event) => updateSettings({ axisHelperVisible: event.target.checked })}
+              />
+              Axis direction helper
             </label>
           </div>
         </MenuGroup>

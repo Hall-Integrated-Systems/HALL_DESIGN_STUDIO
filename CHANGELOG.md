@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.2.0
+
+- Added Canvas Select + Move and Panel Select Only workflows for dense overlapping scenes.
+- Added an Ignore locked objects in canvas selection toggle.
+- Added X/Y/Z color cues in the properties panel and an editor-only axis direction helper.
+- Kept transform controls, selection bounds, and the axis helper hidden from PNG export while mounting helpers still export normally.
+
 ## v2.1.0
 
 - Added Mounting Helpers for visual fabrication planning.

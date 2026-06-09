@@ -1,5 +1,5 @@
 import { TransformControls } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
+import { ThreeEvent, useThree } from '@react-three/fiber';
 import { ComponentRef, useEffect, useRef } from 'react';
 import type { Group } from 'three';
 import { useStudioStore } from '../state/studioStore';
@@ -50,5 +50,20 @@ export function ObjectTransformControls({
     };
   }, [object.id, setOrbitEnabled, target, updateObjectTransform]);
 
-  return <TransformControls ref={controlsRef} object={target} camera={camera} domElement={gl.domElement} mode={mode} />;
+  const stopTransformPointer = (event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
+  };
+
+  return (
+    <TransformControls
+      ref={controlsRef}
+      object={target}
+      camera={camera}
+      domElement={gl.domElement}
+      mode={mode}
+      onPointerDown={stopTransformPointer}
+      onPointerMove={stopTransformPointer}
+      onPointerUp={stopTransformPointer}
+    />
+  );
 }

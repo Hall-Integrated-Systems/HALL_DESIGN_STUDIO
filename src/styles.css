@@ -379,6 +379,10 @@ input[type='range'] {
   gap: 8px;
 }
 
+.menu-wide-field {
+  grid-column: 1 / -1;
+}
+
 .menu-field {
   margin-top: 0;
 }
@@ -587,6 +591,33 @@ button.active,
 
 .compact-field {
   margin-top: 0;
+}
+
+.axis-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 800;
+}
+
+.axis-label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.axis-x {
+  color: #ff6b6b;
+}
+
+.axis-y {
+  color: #52d273;
+}
+
+.axis-z {
+  color: #5f9dff;
 }
 
 .color-field {

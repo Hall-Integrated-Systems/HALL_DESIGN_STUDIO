@@ -47,6 +47,8 @@ npm run build
 - Annotation objects: text labels, arrows, dimension lines, and marker dots
 - Mounting Helpers for visual hole, slot, washer, rivnut, standoff, bolt-head, centerline, and clearance planning
 - Object selection, transform controls, duplicate, delete, lock, and visibility
+- Selection modes for normal canvas picking or panel-only layer selection in dense scenes
+- Axis direction helper and X/Y/Z color-coded position inputs
 - Material controls with color, roughness, metalness, and opacity
 - Hall Integrated Systems brand color presets
 - Material presets for plastics, metals, rubber, prototype gray, clear plastic, and premium black
@@ -81,6 +83,12 @@ Start from a project template or Asset Library components, add the product model
 ### Bracket and Amp-Mount Planning
 
 Use Mounting Helpers in the left toolbar to place visual round holes, slotted holes, washers, rivnuts, standoffs, bolt heads, centerlines, and clearance zones over brackets or plates. These markers are for layout renders and fabrication notes only; verify real-world hole sizes, spacing, edge distance, fastener clearances, and material requirements before drilling or cutting.
+
+### Dense Assembly Selection
+
+Use `Canvas Select + Move` for normal staging where clicking an object selects it. Switch to `Panel Select Only` in the View menu when parts overlap or transform arrows sit over nearby objects; then choose the active layer from the right Scene Objects list and use transform controls without accidental canvas reselection. Enable `Ignore locked objects in canvas selection` when base plates, rails, amp bodies, or reference parts should stay selectable from the panel but not by canvas clicks.
+
+The X, Y, and Z fields in the properties panel match the transform colors: X red, Y green, Z blue. The View menu also includes an axis direction helper for front/back/left/right/up orientation while planning real physical layouts. The helper and transform controls are editor aids and are hidden from PNG export; mounting helpers remain visible because they are intentional scene objects.
 
 ## Export Sizes
 

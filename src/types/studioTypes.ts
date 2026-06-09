@@ -35,6 +35,8 @@ export type SceneTemplate = 'catalog-white' | 'dark-premium' | 'transparent-cuto
 
 export type ProductRenderPreset = 'website-product-tile' | 'website-banner' | 'autodesk-application-image' | 'photoshop-cutout';
 
+export type SelectionMode = 'canvas-select-move' | 'panel-select-only';
+
 export type ProjectTemplateId =
   | 'blank-studio'
   | 'website-product-tile'
@@ -135,6 +137,10 @@ export interface StudioSettings {
   floorVisible: boolean;
   gridVisible: boolean;
   shadowsEnabled: boolean;
+  selectionMode: SelectionMode;
+  moveSelectedOnly: boolean;
+  ignoreLockedObjectsInCanvasSelection: boolean;
+  axisHelperVisible: boolean;
   screenshotSize: ScreenshotSize;
   exportFileName: string;
   exportFileNameEdited: boolean;

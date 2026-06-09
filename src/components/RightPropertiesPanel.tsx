@@ -520,7 +520,7 @@ function VectorEditor({
           const value = field === 'rotation' ? toDegrees(object[field][index]) : Number(object[field][index].toFixed(3));
           return (
             <label key={axis} className="field compact-field">
-              <span>{axis}</span>
+              <span className={`axis-label axis-${axis.toLowerCase()}`}>{axis}</span>
               <input type="number" step={field === 'rotation' ? 1 : 0.1} value={value} onChange={(event) => onChange(field, index, event.target.value)} />
             </label>
           );
