@@ -8,6 +8,7 @@ import { ObjectTransformControls } from './ObjectTransformControls';
 import { useStudioStore } from '../state/studioStore';
 import type {
   AnnotationData,
+  AxisMoveLock,
   CameraPreset,
   MountingHelperData,
   PrimitiveKind,
@@ -35,6 +36,7 @@ function StudioScene() {
   const transformMode = useStudioStore((state) => state.transformMode);
   const setTransformMode = useStudioStore((state) => state.setTransformMode);
   const settings = useStudioStore((state) => state.settings);
+  const updateSettings = useStudioStore((state) => state.updateSettings);
   const isExporting = useStudioStore((state) => state.isExporting);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
 
@@ -99,6 +101,19 @@ function StudioScene() {
               {mode}
             </button>
           ))}
+          <div className="axis-lock-controls" aria-label="Axis movement lock">
+            {axisLockOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`axis-lock-button axis-lock-${option.value} ${settings.axisMoveLock === option.value ? 'active' : ''}`}
+                onClick={() => updateSettings({ axisMoveLock: option.value })}
+                title={option.title}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </Html>
 
@@ -112,6 +127,13 @@ function StudioScene() {
     </>
   );
 }
+
+const axisLockOptions: Array<{ value: AxisMoveLock; label: string; title: string }> = [
+  { value: 'free', label: 'Free', title: 'Free movement' },
+  { value: 'x', label: 'X only', title: 'Move on X only' },
+  { value: 'y', label: 'Y only', title: 'Move on Y only' },
+  { value: 'z', label: 'Z only', title: 'Move on Z only' },
+];
 
 function SceneObject({
   object,

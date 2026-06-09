@@ -141,6 +141,7 @@ const DEFAULT_SETTINGS: StudioSettings = {
   moveSelectedOnly: false,
   ignoreLockedObjectsInCanvasSelection: false,
   axisHelperVisible: true,
+  axisMoveLock: 'free',
   screenshotSize: 'viewport',
   exportFileName: '',
   exportFileNameEdited: false,

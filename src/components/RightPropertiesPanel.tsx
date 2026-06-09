@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react';
 import { useStudioStore } from '../state/studioStore';
-import type { StudioObject, Vec3 } from '../types/studioTypes';
+import type { SelectionMode, StudioObject, Vec3 } from '../types/studioTypes';
 import { brandColorPresets, materialPresets } from '../config/presets';
 
 type VectorField = 'position' | 'rotation' | 'scale';
@@ -50,7 +50,8 @@ export function RightPropertiesPanel() {
           objects={objects}
           selectedObjectId={selectedObjectId}
           onSelect={selectObject}
-          panelMovementMode={settings.selectionMode === 'panel-select-only' || settings.moveSelectedOnly}
+          selectionMode={settings.selectionMode}
+          moveSelectedOnly={settings.moveSelectedOnly}
         />
         <p className="empty-state">
           Select an object in the canvas or scene list to adjust placement, material, lock state, visibility, and export-ready product staging.
@@ -76,7 +77,8 @@ export function RightPropertiesPanel() {
         objects={objects}
         selectedObjectId={selectedObjectId}
         onSelect={selectObject}
-        panelMovementMode={settings.selectionMode === 'panel-select-only' || settings.moveSelectedOnly}
+        selectionMode={settings.selectionMode}
+        moveSelectedOnly={settings.moveSelectedOnly}
       />
 
       <label className="field">
@@ -471,17 +473,25 @@ function ObjectList({
   objects,
   selectedObjectId,
   onSelect,
-  panelMovementMode,
+  selectionMode,
+  moveSelectedOnly,
 }: {
   objects: StudioObject[];
   selectedObjectId: string | null;
   onSelect: (id: string | null) => void;
-  panelMovementMode: boolean;
+  selectionMode: SelectionMode;
+  moveSelectedOnly: boolean;
 }) {
+  const panelMovementMessage = moveSelectedOnly
+    ? 'Move Panel-Selected Object Only is active. Choose the object here, then move it in the canvas.'
+    : selectionMode === 'panel-select-only'
+      ? 'Panel Select Only is active. Choose objects here before moving them.'
+      : '';
+
   return (
     <section className="panel-section">
       <h3>Scene Objects</h3>
-      {panelMovementMode && <p className="list-empty">In Panel Select Only or Move Selected Only mode, choose objects here before moving them.</p>}
+      {panelMovementMessage && <p className="list-empty">{panelMovementMessage}</p>}
       {objects.length === 0 ? (
         <p className="list-empty">Add a primitive or import a GLB/GLTF model to start staging.</p>
       ) : (
@@ -493,7 +503,10 @@ function ObjectList({
               className={object.id === selectedObjectId ? 'active' : ''}
               onClick={() => onSelect(object.id)}
             >
-              <span>{object.name}</span>
+              <span>
+                {object.name}
+                {object.id === selectedObjectId && <strong className="move-hint">Moves with gizmo</strong>}
+              </span>
               <small>
                 {getObjectTypeLabel(object)} / {object.visible ? 'Visible' : 'Hidden'}
                 {object.locked ? ' / Locked' : ''}

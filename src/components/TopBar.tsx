@@ -528,7 +528,7 @@ export function TopBar() {
             </label>
             <label className="toggle-control">
               <input type="checkbox" checked={settings.moveSelectedOnly} onChange={(event) => updateSettings({ moveSelectedOnly: event.target.checked })} />
-              Move Selected Only
+              Move Panel-Selected Object Only
             </label>
             <label className="toggle-control">
               <input
@@ -544,7 +544,7 @@ export function TopBar() {
                 checked={settings.axisHelperVisible}
                 onChange={(event) => updateSettings({ axisHelperVisible: event.target.checked })}
               />
-              Axis direction helper
+              Show Direction Helper
             </label>
           </div>
         </MenuGroup>

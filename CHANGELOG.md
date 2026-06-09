@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.3.0
+
+- Added Move Panel-Selected Object Only wording and workflow for dense assembly movement.
+- Added Free, X-only, Y-only, and Z-only axis movement lock controls for translate operations.
+- Improved Scene Objects selected-row clarity with a movement hint for the active layer.
+- Upgraded direction helper and axis color consistency across movement controls, position fields, and helper labels.
+
 ## v2.2.1
 
 - Strengthened panel-driven movement for dense assemblies with a Move Selected Only toggle.

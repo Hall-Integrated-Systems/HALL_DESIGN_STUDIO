@@ -697,10 +697,24 @@ button.active,
   text-align: left;
 }
 
+.object-list button.active {
+  border-left: 4px solid #87b5e8;
+  box-shadow: inset 0 0 0 1px rgba(7, 17, 26, 0.2), 0 0 0 1px rgba(135, 181, 232, 0.28);
+}
+
 .object-list span {
+  display: grid;
+  gap: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.move-hint {
+  color: #29415a;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .object-list small {
@@ -775,6 +789,8 @@ button.active,
   top: 104px;
   left: 50%;
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 6px;
   border-radius: 8px;
@@ -785,6 +801,50 @@ button.active,
   min-width: 86px;
   padding: 0 10px;
   text-transform: capitalize;
+}
+
+.axis-lock-controls {
+  display: flex;
+  gap: 4px;
+  padding-left: 6px;
+  border-left: 1px solid rgba(104, 123, 145, 0.35);
+}
+
+.mode-selector .axis-lock-button {
+  min-width: 64px;
+  font-size: 12px;
+  text-transform: none;
+}
+
+.axis-lock-free {
+  color: #edf4fb;
+}
+
+.axis-lock-x {
+  border-color: rgba(255, 107, 107, 0.6);
+  color: #ff9b9b;
+}
+
+.axis-lock-y {
+  border-color: rgba(82, 210, 115, 0.6);
+  color: #97e6ab;
+}
+
+.axis-lock-z {
+  border-color: rgba(95, 157, 255, 0.6);
+  color: #a8c7ff;
+}
+
+.axis-lock-button.active.axis-lock-x {
+  background: #ff6b6b;
+}
+
+.axis-lock-button.active.axis-lock-y {
+  background: #52d273;
+}
+
+.axis-lock-button.active.axis-lock-z {
+  background: #5f9dff;
 }
 
 .loading-label {

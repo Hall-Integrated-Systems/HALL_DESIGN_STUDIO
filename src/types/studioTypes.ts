@@ -37,6 +37,8 @@ export type ProductRenderPreset = 'website-product-tile' | 'website-banner' | 'a
 
 export type SelectionMode = 'canvas-select-move' | 'panel-select-only';
 
+export type AxisMoveLock = 'free' | 'x' | 'y' | 'z';
+
 export type ProjectTemplateId =
   | 'blank-studio'
   | 'website-product-tile'
@@ -141,6 +143,7 @@ export interface StudioSettings {
   moveSelectedOnly: boolean;
   ignoreLockedObjectsInCanvasSelection: boolean;
   axisHelperVisible: boolean;
+  axisMoveLock: AxisMoveLock;
   screenshotSize: ScreenshotSize;
   exportFileName: string;
   exportFileNameEdited: boolean;
