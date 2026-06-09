@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react';
 import { useStudioStore } from '../state/studioStore';
-import type { ProjectSource, SelectionMode, StudioObject, Vec3 } from '../types/studioTypes';
+import type { AlignmentAction, ProjectSource, SelectionMode, StudioObject, Vec3 } from '../types/studioTypes';
 import { brandColorPresets, materialPresets } from '../config/presets';
 
 type VectorField = 'position' | 'rotation' | 'scale';
@@ -25,7 +25,10 @@ export function RightPropertiesPanel() {
   const objects = useStudioStore((state) => state.objects);
   const settings = useStudioStore((state) => state.settings);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
+  const referenceObjectId = useStudioStore((state) => state.referenceObjectId);
   const selectObject = useStudioStore((state) => state.selectObject);
+  const setReferenceObject = useStudioStore((state) => state.setReferenceObject);
+  const alignSelectedObject = useStudioStore((state) => state.alignSelectedObject);
   const updateObject = useStudioStore((state) => state.updateObject);
   const updateObjectTransform = useStudioStore((state) => state.updateObjectTransform);
   const updateObjectMaterial = useStudioStore((state) => state.updateObjectMaterial);
@@ -111,6 +114,13 @@ export function RightPropertiesPanel() {
       <VectorEditor object={selectedObject} field="position" label="Position" onChange={setVectorValue} />
       <VectorEditor object={selectedObject} field="rotation" label="Rotation" onChange={setVectorValue} />
       <VectorEditor object={selectedObject} field="scale" label="Scale" onChange={setVectorValue} />
+      <AlignmentPanel
+        objects={objects}
+        selectedObjectId={selectedObject.id}
+        referenceObjectId={referenceObjectId}
+        onReferenceChange={setReferenceObject}
+        onAlign={alignSelectedObject}
+      />
 
       {selectedObject.kind === 'image' && selectedObject.imagePlane ? (
         <ImagePlanePanel object={selectedObject} onUpdate={updateObject} />
@@ -476,6 +486,67 @@ function getSaveStateLabel(isDirty: boolean, browserProjectId: string | null, pr
   if (browserProjectId) return 'Saved';
   if (projectSource === 'json') return 'Loaded from JSON - Never Saved to Browser';
   return 'Never Saved';
+}
+
+function AlignmentPanel({
+  objects,
+  selectedObjectId,
+  referenceObjectId,
+  onReferenceChange,
+  onAlign,
+}: {
+  objects: StudioObject[];
+  selectedObjectId: string;
+  referenceObjectId: string | null;
+  onReferenceChange: (id: string | null) => void;
+  onAlign: (action: AlignmentAction) => void;
+}) {
+  const referenceOptions = objects.filter((object) => object.id !== selectedObjectId);
+  const hasReference = Boolean(referenceObjectId && referenceOptions.some((object) => object.id === referenceObjectId));
+
+  return (
+    <section className="panel-section">
+      <h3>Align Tools</h3>
+      <p className="list-empty">Choose a reference object, then align or match the selected object.</p>
+      <label className="field">
+        <span>Reference Object</span>
+        <select value={hasReference ? referenceObjectId ?? '' : ''} onChange={(event) => onReferenceChange(event.target.value || null)}>
+          <option value="">Choose reference</option>
+          {referenceOptions.map((object) => (
+            <option key={object.id} value={object.id}>
+              {object.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="alignment-grid">
+        <button type="button" onClick={() => onAlign('center-origin')}>
+          Center on Origin
+        </button>
+        <button type="button" disabled={!hasReference} onClick={() => onAlign('align-x')}>
+          Align X
+        </button>
+        <button type="button" disabled={!hasReference} onClick={() => onAlign('align-y')}>
+          Align Y
+        </button>
+        <button type="button" disabled={!hasReference} onClick={() => onAlign('align-z')}>
+          Align Z
+        </button>
+        <button type="button" disabled={!hasReference} onClick={() => onAlign('match-height')}>
+          Match Height
+        </button>
+        <button type="button" disabled={!hasReference} onClick={() => onAlign('match-scale-x')}>
+          Match Scale X
+        </button>
+        <button type="button" disabled={!hasReference} onClick={() => onAlign('match-scale-y')}>
+          Match Scale Y
+        </button>
+        <button type="button" disabled={!hasReference} onClick={() => onAlign('match-scale-z')}>
+          Match Scale Z
+        </button>
+      </div>
+    </section>
+  );
 }
 
 function ObjectList({

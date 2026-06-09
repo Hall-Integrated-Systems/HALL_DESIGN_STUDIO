@@ -2,7 +2,7 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createProject, downloadProject, estimateProjectBytes, formatBytes, readProjectFile } from '../utils/projectSerialization';
 import { useStudioStore } from '../state/studioStore';
-import type { BackgroundMode, CameraPreset, ProjectSource, ProjectTemplateId, ScreenshotSize } from '../types/studioTypes';
+import type { BackgroundMode, CameraPreset, ProjectSource, ProjectTemplateId, ScreenshotSize, SnapSize } from '../types/studioTypes';
 import { APP_VERSION, productRenderPresets, sceneTemplates } from '../config/presets';
 import { projectTemplates } from '../config/projectTemplates';
 import {
@@ -25,6 +25,7 @@ import {
 
 const cameraPresets: CameraPreset[] = ['front', 'back', 'left', 'right', 'top', 'isometric'];
 const backgroundModes: BackgroundMode[] = ['dark', 'light', 'transparent'];
+const snapSizes: SnapSize[] = [0.125, 0.25, 0.5, 1];
 
 const screenshotSizes: Array<{ value: ScreenshotSize; label: string }> = [
   { value: 'viewport', label: 'Viewport' },
@@ -530,6 +531,30 @@ export function TopBar() {
             <label className="toggle-control">
               <input type="checkbox" checked={settings.gridVisible} onChange={(event) => updateSettings({ gridVisible: event.target.checked })} />
               Grid
+            </label>
+            <label className="toggle-control">
+              <input type="checkbox" checked={settings.snapToGrid} onChange={(event) => updateSettings({ snapToGrid: event.target.checked })} />
+              Snap to Grid
+            </label>
+            <label className="field menu-field">
+              <span>Snap Size</span>
+              <select value={settings.gridSnapSize} onChange={(event) => updateSettings({ gridSnapSize: Number(event.target.value) as SnapSize })}>
+                {snapSizes.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field menu-field">
+              <span>Duplicate Offset</span>
+              <input
+                type="number"
+                min={0}
+                step={settings.gridSnapSize}
+                value={settings.duplicateOffset}
+                onChange={(event) => updateSettings({ duplicateOffset: Number(event.target.value) || 0 })}
+              />
             </label>
             <label className="toggle-control">
               <input type="checkbox" checked={settings.shadowsEnabled} onChange={(event) => updateSettings({ shadowsEnabled: event.target.checked })} />

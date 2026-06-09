@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.5.0
+
+- Added Snap to Grid with selectable snap sizes and snap-aware position editing, transform movement, and duplication.
+- Added duplicate offset setting for clearer fabrication-layout copies.
+- Added selected-object alignment and matching tools with a reference-object workflow.
+- Added snap/alignment documentation for amp mount, bracket, rail, post, and mounting-helper layout work.
+
 ## v2.4.0
 
 - Added clearer browser save states: Never Saved, Saved, and Unsaved Changes.

@@ -22,7 +22,8 @@ export function ObjectTransformControls({
   const controlsRef = useRef<ComponentRef<typeof TransformControls> | null>(null);
   const dragStartPositionRef = useRef<Vec3>(object.position);
   const mode = useStudioStore((state) => state.transformMode);
-  const axisMoveLock = useStudioStore((state) => state.settings.axisMoveLock);
+  const settings = useStudioStore((state) => state.settings);
+  const axisMoveLock = settings.axisMoveLock;
   const updateObjectTransform = useStudioStore((state) => state.updateObjectTransform);
   const camera = useThree((state) => state.camera);
   const gl = useThree((state) => state.gl);
@@ -32,7 +33,7 @@ export function ObjectTransformControls({
     if (!controls) return;
 
     const syncTransform = () => {
-      const position = getLockedPosition(axisMoveLock, dragStartPositionRef.current, [target.position.x, target.position.y, target.position.z], mode);
+      const position = getConstrainedPosition(settings, dragStartPositionRef.current, [target.position.x, target.position.y, target.position.z], mode);
       target.position.set(...position);
       updateObjectTransform(object.id, {
         position,
@@ -59,7 +60,7 @@ export function ObjectTransformControls({
       controls.removeEventListener('mouseUp', syncTransform);
       controls.removeEventListener('dragging-changed', handleDragging as (event: unknown) => void);
     };
-  }, [axisMoveLock, mode, object.id, setOrbitEnabled, target, updateObjectTransform]);
+  }, [mode, object.id, setOrbitEnabled, settings, target, updateObjectTransform]);
 
   const stopTransformPointer = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
@@ -82,9 +83,20 @@ export function ObjectTransformControls({
   );
 }
 
-function getLockedPosition(axisMoveLock: AxisMoveLock, start: Vec3, next: Vec3, mode: string): Vec3 {
-  if (mode !== 'translate' || axisMoveLock === 'free') return next;
-  if (axisMoveLock === 'x') return [next[0], start[1], start[2]];
-  if (axisMoveLock === 'y') return [start[0], next[1], start[2]];
-  return [start[0], start[1], next[2]];
+function getConstrainedPosition(
+  settings: { axisMoveLock: AxisMoveLock; snapToGrid: boolean; gridSnapSize: number },
+  start: Vec3,
+  next: Vec3,
+  mode: string,
+): Vec3 {
+  if (mode !== 'translate') return next;
+  const snapped = settings.snapToGrid ? snapVector(next, settings.gridSnapSize) : next;
+  if (settings.axisMoveLock === 'x') return [snapped[0], start[1], start[2]];
+  if (settings.axisMoveLock === 'y') return [start[0], snapped[1], start[2]];
+  if (settings.axisMoveLock === 'z') return [start[0], start[1], snapped[2]];
+  return snapped;
+}
+
+function snapVector(vector: Vec3, snapSize: number): Vec3 {
+  return vector.map((value) => Number((Math.round(value / snapSize) * snapSize).toFixed(4))) as Vec3;
 }

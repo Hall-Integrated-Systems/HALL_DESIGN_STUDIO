@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type {
+  AlignmentAction,
   AnnotationKind,
   BackgroundMode,
   CameraPreset,
@@ -49,6 +50,7 @@ interface StudioState {
   isDirty: boolean;
   activeBrowserProjectId: string | null;
   projectSource: ProjectSource;
+  referenceObjectId: string | null;
   selectedObjectId: string | null;
   transformMode: TransformMode;
   cameraPreset: CameraPreset;
@@ -72,7 +74,9 @@ interface StudioState {
   clearScene: () => void;
   markSaved: () => void;
   setActiveBrowserProjectId: (id: string | null) => void;
+  setReferenceObject: (id: string | null) => void;
   selectObject: (id: string | null) => void;
+  alignSelectedObject: (action: AlignmentAction) => void;
   updateObject: (id: string, patch: Partial<StudioObject>) => void;
   updateObjectTransform: (id: string, transform: Partial<Pick<StudioObject, 'position' | 'rotation' | 'scale'>>) => void;
   updateObjectMaterial: (id: string, material: Partial<StudioObject['material']>) => void;
@@ -118,7 +122,35 @@ const DEFAULT_ANNOTATION_MATERIAL = {
 
 const makeId = () => crypto.randomUUID();
 
-const offsetPosition = (position: Vec3): Vec3 => [position[0] + 0.35, position[1], position[2] + 0.35];
+const offsetPosition = (position: Vec3, offset: number): Vec3 => [position[0] + offset, position[1], position[2] + offset];
+
+const snapValue = (value: number, snapSize: number) => Number((Math.round(value / snapSize) * snapSize).toFixed(4));
+
+const snapVector = (vector: Vec3, settings: StudioSettings): Vec3 =>
+  settings.snapToGrid ? ([snapValue(vector[0], settings.gridSnapSize), snapValue(vector[1], settings.gridSnapSize), snapValue(vector[2], settings.gridSnapSize)] as Vec3) : vector;
+
+const vec3 = (x: number, y: number, z: number): Vec3 => [x, y, z];
+
+const snapChangedAxes = (current: Vec3, next: Vec3, settings: StudioSettings): Vec3 => {
+  if (!settings.snapToGrid) return next;
+  return next.map((value, index) => (Math.abs(value - current[index]) > 0.0001 ? snapValue(value, settings.gridSnapSize) : current[index])) as Vec3;
+};
+
+const applyPositionRules = (current: Vec3, next: Vec3, settings: StudioSettings): Vec3 => {
+  const snapped = snapChangedAxes(current, next, settings);
+  if (settings.axisMoveLock === 'x') return [snapped[0], current[1], current[2]];
+  if (settings.axisMoveLock === 'y') return [current[0], snapped[1], current[2]];
+  if (settings.axisMoveLock === 'z') return [current[0], current[1], snapped[2]];
+  return snapped;
+};
+
+const getDuplicatePosition = (position: Vec3, settings: StudioSettings): Vec3 => {
+  const offset = settings.duplicateOffset;
+  if (settings.axisMoveLock === 'x') return snapVector([position[0] + offset, position[1], position[2]], settings);
+  if (settings.axisMoveLock === 'y') return snapVector([position[0], position[1] + offset, position[2]], settings);
+  if (settings.axisMoveLock === 'z') return snapVector([position[0], position[1], position[2] + offset], settings);
+  return snapVector(offsetPosition(position, offset), settings);
+};
 
 const primitiveNames: Record<PrimitiveKind, string> = {
   cube: 'Cube',
@@ -144,6 +176,9 @@ const DEFAULT_SETTINGS: StudioSettings = {
   ignoreLockedObjectsInCanvasSelection: false,
   axisHelperVisible: true,
   axisMoveLock: 'free',
+  snapToGrid: false,
+  gridSnapSize: 0.25,
+  duplicateOffset: 0.35,
   screenshotSize: 'viewport',
   exportFileName: '',
   exportFileNameEdited: false,
@@ -227,6 +262,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   isDirty: false,
   activeBrowserProjectId: null,
   projectSource: 'new',
+  referenceObjectId: null,
   selectedObjectId: null,
   transformMode: 'translate',
   cameraPreset: 'isometric',
@@ -492,6 +528,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       isDirty: false,
       activeBrowserProjectId: null,
       projectSource: 'new',
+      referenceObjectId: null,
     });
   },
 
@@ -502,13 +539,38 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       isDirty: true,
       activeBrowserProjectId: null,
       projectSource: 'new',
+      referenceObjectId: null,
       settings: { ...state.settings, exportFileName: '', exportFileNameEdited: false },
     })),
 
   markSaved: () => set({ isDirty: false }),
   setActiveBrowserProjectId: (id) => set({ activeBrowserProjectId: id, projectSource: id ? 'browser' : 'new' }),
+  setReferenceObject: (id) => set({ referenceObjectId: id }),
 
   selectObject: (id) => set({ selectedObjectId: id }),
+
+  alignSelectedObject: (action) =>
+    set((state) => {
+      const selected = state.objects.find((object) => object.id === state.selectedObjectId);
+      if (!selected) return state;
+      const reference = state.objects.find((object) => object.id === state.referenceObjectId);
+      if (action !== 'center-origin' && !reference) return state;
+
+      const nextObjects = state.objects.map((object) => {
+        if (object.id !== selected.id) return object;
+        if (action === 'center-origin') return { ...object, position: snapVector([0, object.position[1], 0], state.settings) };
+        if (!reference) return object;
+        if (action === 'align-x') return { ...object, position: snapVector([reference.position[0], object.position[1], object.position[2]], state.settings) };
+        if (action === 'align-y' || action === 'match-height') return { ...object, position: snapVector([object.position[0], reference.position[1], object.position[2]], state.settings) };
+        if (action === 'align-z') return { ...object, position: snapVector([object.position[0], object.position[1], reference.position[2]], state.settings) };
+        if (action === 'match-scale-x') return { ...object, scale: vec3(reference.scale[0], object.scale[1], object.scale[2]) };
+        if (action === 'match-scale-y') return { ...object, scale: vec3(object.scale[0], reference.scale[1], object.scale[2]) };
+        if (action === 'match-scale-z') return { ...object, scale: vec3(object.scale[0], object.scale[1], reference.scale[2]) };
+        return object;
+      });
+
+      return { objects: nextObjects, isDirty: true };
+    }),
 
   updateObject: (id, patch) =>
     set((state) => ({
@@ -518,7 +580,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   updateObjectTransform: (id, transform) =>
     set((state) => ({
-      objects: state.objects.map((object) => (object.id === id ? { ...object, ...transform } : object)),
+      objects: state.objects.map((object) =>
+        object.id === id
+          ? {
+              ...object,
+              ...transform,
+              position: transform.position ? applyPositionRules(object.position, transform.position, state.settings) : object.position,
+            }
+          : object,
+      ),
       isDirty: true,
     })),
 
@@ -547,7 +617,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       ...selected,
       id: makeId(),
       name: `${selected.name} Copy`,
-      position: offsetPosition(selected.position),
+      position: getDuplicatePosition(selected.position, get().settings),
       material: { ...selected.material },
       imagePlane: selected.imagePlane ? { ...selected.imagePlane } : undefined,
       annotation: selected.annotation ? { ...selected.annotation } : undefined,
@@ -616,5 +686,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       isDirty: false,
       activeBrowserProjectId: browserProjectId,
       projectSource: source,
+      referenceObjectId: null,
     }),
 }));

@@ -51,6 +51,8 @@ npm run build
 - Selection modes for normal canvas picking, panel-only layer selection, and move-panel-selected-only workflows
 - Axis direction helper and X/Y/Z color-coded position inputs
 - Axis lock buttons for Free, X-only, Y-only, and Z-only movement
+- Snap to Grid with 0.125, 0.25, 0.5, and 1.0 snap sizes
+- Alignment tools for matching selected object position or scale to a reference object
 - Material controls with color, roughness, metalness, and opacity
 - Hall Integrated Systems brand color presets
 - Material presets for plastics, metals, rubber, prototype gray, clear plastic, and premium black
@@ -89,6 +91,16 @@ The project title shows one of three browser-save states: `Never Saved`, `Saved`
 ### Bracket and Amp-Mount Planning
 
 Use Mounting Helpers in the left toolbar to place visual round holes, slotted holes, washers, rivnuts, standoffs, bolt heads, centerlines, and clearance zones over brackets or plates. These markers are for layout renders and fabrication notes only; verify real-world hole sizes, spacing, edge distance, fastener clearances, and material requirements before drilling or cutting.
+
+### Snapping and Alignment
+
+Enable `Snap to Grid` in the View menu when placing brackets, rails, posts, standoffs, or mounting-hole markers. Choose a snap size of `0.125`, `0.25`, `0.5`, or `1.0`; position edits, translate-gizmo movement, and duplicate placement snap to that increment. The duplicate offset setting in the View menu controls how far duplicated objects move from the original, and it also respects the active snap size.
+
+Axis locks are snap-aware. Use `X only`, `Y only`, or `Z only` when you want movement constrained to one direction while preserving the other coordinates. This is useful for laying out repeated hole markers, keeping standoffs level, or shifting a row of parts without accidentally changing depth or height.
+
+Use the Align Tools section in the right properties panel to pick a reference object and align the selected object to it. You can center the selected object on the scene origin, align X/Y/Z position to the reference, match height/Y position, or match scale on X/Y/Z. Mounting helpers behave like normal scene objects for snapping, alignment, duplication, save/load, and PNG export.
+
+Suggested amp-mount workflow: add a base plate, add Round Hole or Rivnut markers, enable `Snap to Grid` at `0.25`, duplicate markers with a visible offset, use axis locks to move them along one direction, then use Align Tools to match rows, columns, heights, or repeated marker scale. Treat the result as a visual layout and fabrication communication aid, not a source of drilled-hole dimensions.
 
 ### Dense Assembly Selection
 
