@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.2.1
+
+- Strengthened panel-driven movement for dense assemblies with a Move Selected Only toggle.
+- Improved transform-control pointer handling so dragging gizmo handles does not select objects underneath.
+- Upgraded axis color clarity in the properties panel and expanded the editor-only orientation helper to show positive and negative directions.
+
 ## v2.2.0
 
 - Added Canvas Select + Move and Panel Select Only workflows for dense overlapping scenes.

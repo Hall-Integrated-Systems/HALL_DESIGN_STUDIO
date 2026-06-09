@@ -138,6 +138,7 @@ const DEFAULT_SETTINGS: StudioSettings = {
   gridVisible: true,
   shadowsEnabled: true,
   selectionMode: 'canvas-select-move',
+  moveSelectedOnly: false,
   ignoreLockedObjectsInCanvasSelection: false,
   axisHelperVisible: true,
   screenshotSize: 'viewport',

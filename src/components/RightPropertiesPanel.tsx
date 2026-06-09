@@ -21,6 +21,7 @@ export function RightPropertiesPanel() {
   const projectNotes = useStudioStore((state) => state.projectNotes);
   const isDirty = useStudioStore((state) => state.isDirty);
   const objects = useStudioStore((state) => state.objects);
+  const settings = useStudioStore((state) => state.settings);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
   const selectObject = useStudioStore((state) => state.selectObject);
   const updateObject = useStudioStore((state) => state.updateObject);
@@ -45,7 +46,12 @@ export function RightPropertiesPanel() {
       <aside className="properties-panel">
         <h2>Properties</h2>
         {projectPanel}
-        <ObjectList objects={objects} selectedObjectId={selectedObjectId} onSelect={selectObject} />
+        <ObjectList
+          objects={objects}
+          selectedObjectId={selectedObjectId}
+          onSelect={selectObject}
+          panelMovementMode={settings.selectionMode === 'panel-select-only' || settings.moveSelectedOnly}
+        />
         <p className="empty-state">
           Select an object in the canvas or scene list to adjust placement, material, lock state, visibility, and export-ready product staging.
         </p>
@@ -66,7 +72,12 @@ export function RightPropertiesPanel() {
     <aside className="properties-panel">
       <h2>Properties</h2>
       {projectPanel}
-      <ObjectList objects={objects} selectedObjectId={selectedObjectId} onSelect={selectObject} />
+      <ObjectList
+        objects={objects}
+        selectedObjectId={selectedObjectId}
+        onSelect={selectObject}
+        panelMovementMode={settings.selectionMode === 'panel-select-only' || settings.moveSelectedOnly}
+      />
 
       <label className="field">
         <span>Name</span>
@@ -460,14 +471,17 @@ function ObjectList({
   objects,
   selectedObjectId,
   onSelect,
+  panelMovementMode,
 }: {
   objects: StudioObject[];
   selectedObjectId: string | null;
   onSelect: (id: string | null) => void;
+  panelMovementMode: boolean;
 }) {
   return (
     <section className="panel-section">
       <h3>Scene Objects</h3>
+      {panelMovementMode && <p className="list-empty">In Panel Select Only or Move Selected Only mode, choose objects here before moving them.</p>}
       {objects.length === 0 ? (
         <p className="list-empty">Add a primitive or import a GLB/GLTF model to start staging.</p>
       ) : (
@@ -515,11 +529,18 @@ function VectorEditor({
   return (
     <section className="panel-section">
       <h3>{label}</h3>
+      {field === 'position' && (
+        <div className="axis-legend" aria-label="Position axis color legend">
+          <span className="axis-x">X red</span>
+          <span className="axis-y">Y green</span>
+          <span className="axis-z">Z blue</span>
+        </div>
+      )}
       <div className="vector-grid">
         {axes.map((axis, index) => {
           const value = field === 'rotation' ? toDegrees(object[field][index]) : Number(object[field][index].toFixed(3));
           return (
-            <label key={axis} className="field compact-field">
+            <label key={axis} className={`field compact-field axis-field axis-field-${axis.toLowerCase()}`}>
               <span className={`axis-label axis-${axis.toLowerCase()}`}>{axis}</span>
               <input type="number" step={field === 'rotation' ? 1 : 0.1} value={value} onChange={(event) => onChange(field, index, event.target.value)} />
             </label>

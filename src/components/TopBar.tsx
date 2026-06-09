@@ -527,6 +527,10 @@ export function TopBar() {
               Shadows
             </label>
             <label className="toggle-control">
+              <input type="checkbox" checked={settings.moveSelectedOnly} onChange={(event) => updateSettings({ moveSelectedOnly: event.target.checked })} />
+              Move Selected Only
+            </label>
+            <label className="toggle-control">
               <input
                 type="checkbox"
                 checked={settings.ignoreLockedObjectsInCanvasSelection}

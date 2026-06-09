@@ -86,9 +86,9 @@ Use Mounting Helpers in the left toolbar to place visual round holes, slotted ho
 
 ### Dense Assembly Selection
 
-Use `Canvas Select + Move` for normal staging where clicking an object selects it. Switch to `Panel Select Only` in the View menu when parts overlap or transform arrows sit over nearby objects; then choose the active layer from the right Scene Objects list and use transform controls without accidental canvas reselection. Enable `Ignore locked objects in canvas selection` when base plates, rails, amp bodies, or reference parts should stay selectable from the panel but not by canvas clicks.
+Use `Canvas Select + Move` for normal staging where clicking an object selects it. Switch to `Panel Select Only` in the View menu when parts overlap or transform arrows sit over nearby objects; then choose the active layer from the right Scene Objects list and use transform controls without accidental canvas reselection. Enable `Move Selected Only` when the selected object should be controlled only through the panel-selected layer and transform gizmo, with canvas picking suppressed. Enable `Ignore locked objects in canvas selection` when base plates, rails, amp bodies, or reference parts should stay selectable from the panel but not by canvas clicks.
 
-The X, Y, and Z fields in the properties panel match the transform colors: X red, Y green, Z blue. The View menu also includes an axis direction helper for front/back/left/right/up orientation while planning real physical layouts. The helper and transform controls are editor aids and are hidden from PNG export; mounting helpers remain visible because they are intentional scene objects.
+The X, Y, and Z fields in the properties panel match the transform colors: X red, Y green, Z blue. The View menu also includes an axis direction helper with +X/-X, +Y/-Y, and +Z/-Z cues for front/back/left/right/up/down orientation while planning real physical layouts such as amp mounts and brackets. The helper and transform controls are editor aids and are hidden from PNG export; mounting helpers remain visible because they are intentional scene objects.
 
 ## Export Sizes
 

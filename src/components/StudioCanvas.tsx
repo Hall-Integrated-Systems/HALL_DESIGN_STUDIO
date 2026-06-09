@@ -81,6 +81,7 @@ function StudioScene() {
             shadowsEnabled={settings.shadowsEnabled}
             setOrbitEnabled={setOrbitEnabled}
             selectionMode={settings.selectionMode}
+            moveSelectedOnly={settings.moveSelectedOnly}
             ignoreLockedObjectsInCanvasSelection={settings.ignoreLockedObjectsInCanvasSelection}
             editorHelpersVisible={!isExporting}
           />
@@ -101,7 +102,10 @@ function StudioScene() {
         </div>
       </Html>
 
-      <mesh position={[0, -1000, 0]} onPointerDown={() => settings.selectionMode === 'canvas-select-move' && selectObject(null)}>
+      <mesh
+        position={[0, -1000, 0]}
+        onPointerDown={() => settings.selectionMode === 'canvas-select-move' && !settings.moveSelectedOnly && selectObject(null)}
+      >
         <boxGeometry args={[0.01, 0.01, 0.01]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
@@ -115,6 +119,7 @@ function SceneObject({
   shadowsEnabled,
   setOrbitEnabled,
   selectionMode,
+  moveSelectedOnly,
   ignoreLockedObjectsInCanvasSelection,
   editorHelpersVisible,
 }: {
@@ -123,6 +128,7 @@ function SceneObject({
   shadowsEnabled: boolean;
   setOrbitEnabled: (enabled: boolean) => void;
   selectionMode: 'canvas-select-move' | 'panel-select-only';
+  moveSelectedOnly: boolean;
   ignoreLockedObjectsInCanvasSelection: boolean;
   editorHelpersVisible: boolean;
 }) {
@@ -150,7 +156,7 @@ function SceneObject({
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
     if (!object.visible) return;
-    if (selectionMode === 'panel-select-only') return;
+    if (moveSelectedOnly || selectionMode === 'panel-select-only') return;
     if (ignoreLockedObjectsInCanvasSelection && object.locked) return;
     selectObject(object.id);
   };
@@ -170,15 +176,19 @@ function SceneObject({
 
 function AxisDirectionHelper() {
   return (
-    <group position={[-2.8, 0.08, -2.8]} onPointerDown={(event) => event.stopPropagation()}>
-      <AxisArrow direction={[1, 0, 0]} color="#ff4b4b" label="X" cue="Right" rotation={[0, 0, -Math.PI / 2]} />
-      <AxisArrow direction={[0, 1, 0]} color="#3bd671" label="Y" cue="Up" rotation={[0, 0, 0]} />
-      <AxisArrow direction={[0, 0, 1]} color="#4f8cff" label="Z" cue="Front" rotation={[Math.PI / 2, 0, 0]} />
-      <Text position={[-0.58, 0.02, 0]} fontSize={0.08} color="#ff9a9a" anchorX="center" anchorY="middle">
-        Left
-      </Text>
-      <Text position={[0, 0.02, -0.58]} fontSize={0.08} color="#9bbcff" anchorX="center" anchorY="middle" rotation={[0, Math.PI / 2, 0]}>
-        Back
+    <group position={[-2.75, 0.08, -2.75]} onPointerDown={(event) => event.stopPropagation()}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.004, 0]}>
+        <planeGeometry args={[1.55, 1.55]} />
+        <meshBasicMaterial color="#223041" opacity={0.28} transparent side={DoubleSide} depthWrite={false} />
+      </mesh>
+      <AxisArrow direction={[1, 0, 0]} color="#ff4b4b" label="+X" cue="Right" rotation={[0, 0, -Math.PI / 2]} />
+      <AxisArrow direction={[-1, 0, 0]} color="#ff4b4b" label="-X" cue="Left" rotation={[0, 0, Math.PI / 2]} />
+      <AxisArrow direction={[0, 1, 0]} color="#3bd671" label="+Y" cue="Up" rotation={[0, 0, 0]} />
+      <AxisArrow direction={[0, -1, 0]} color="#3bd671" label="-Y" cue="Down" rotation={[0, 0, Math.PI]} />
+      <AxisArrow direction={[0, 0, 1]} color="#4f8cff" label="+Z" cue="Front" rotation={[Math.PI / 2, 0, 0]} />
+      <AxisArrow direction={[0, 0, -1]} color="#4f8cff" label="-Z" cue="Back" rotation={[-Math.PI / 2, 0, 0]} />
+      <Text position={[0, 0.02, 0]} fontSize={0.06} color="#dce7f4" anchorX="center" anchorY="middle">
+        Scene Direction
       </Text>
     </group>
   );
@@ -200,17 +210,17 @@ function AxisArrow({
   return (
     <group>
       <mesh position={[direction[0] * 0.25, direction[1] * 0.25, direction[2] * 0.25]} rotation={rotation}>
-        <cylinderGeometry args={[0.012, 0.012, 0.5, 12]} />
+        <cylinderGeometry args={[0.01, 0.01, 0.5, 12]} />
         <meshBasicMaterial color={color} />
       </mesh>
       <mesh position={[direction[0] * 0.54, direction[1] * 0.54, direction[2] * 0.54]} rotation={rotation}>
-        <coneGeometry args={[0.04, 0.12, 16]} />
+        <coneGeometry args={[0.035, 0.11, 16]} />
         <meshBasicMaterial color={color} />
       </mesh>
-      <Text position={[direction[0] * 0.7, direction[1] * 0.7, direction[2] * 0.7]} fontSize={0.11} color={color} anchorX="center" anchorY="middle">
+      <Text position={[direction[0] * 0.7, direction[1] * 0.7, direction[2] * 0.7]} fontSize={0.085} color={color} anchorX="center" anchorY="middle">
         {label}
       </Text>
-      <Text position={[direction[0] * 0.9, direction[1] * 0.9, direction[2] * 0.9]} fontSize={0.07} color="#dce7f4" anchorX="center" anchorY="middle">
+      <Text position={[direction[0] * 0.9, direction[1] * 0.9, direction[2] * 0.9]} fontSize={0.055} color="#dce7f4" anchorX="center" anchorY="middle">
         {cue}
       </Text>
     </group>

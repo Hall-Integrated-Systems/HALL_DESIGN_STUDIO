@@ -620,6 +620,39 @@ button.active,
   color: #5f9dff;
 }
 
+.axis-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -2px 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.axis-legend span {
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: rgba(12, 17, 24, 0.65);
+}
+
+.axis-field input {
+  border-left-width: 4px;
+}
+
+.axis-field-x input {
+  border-left-color: #ff6b6b;
+}
+
+.axis-field-y input {
+  border-left-color: #52d273;
+}
+
+.axis-field-z input {
+  border-left-color: #5f9dff;
+}
+
 .color-field {
   grid-template-columns: 1fr 56px;
   align-items: center;
