@@ -2,7 +2,7 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createProject, downloadProject, estimateProjectBytes, formatBytes, readProjectFile } from '../utils/projectSerialization';
 import { useStudioStore } from '../state/studioStore';
-import type { BackgroundMode, CameraPreset, ProjectTemplateId, ScreenshotSize } from '../types/studioTypes';
+import type { BackgroundMode, CameraPreset, ProjectSource, ProjectTemplateId, ScreenshotSize } from '../types/studioTypes';
 import { APP_VERSION, productRenderPresets, sceneTemplates } from '../config/presets';
 import { projectTemplates } from '../config/projectTemplates';
 import {
@@ -36,6 +36,12 @@ const screenshotSizes: Array<{ value: ScreenshotSize; label: string }> = [
 const BROWSER_PROJECT_WARNING_BYTES = 5 * 1024 * 1024;
 const LIVE_SITE_URL = 'https://studio.hallintegratedsystems.com';
 const formatScreenshotSize = (value: ScreenshotSize) => screenshotSizes.find((size) => size.value === value)?.label ?? value;
+const getSaveStateLabel = (isDirty: boolean, browserProjectId: string | null, projectSource: ProjectSource) => {
+  if (isDirty) return 'Unsaved Changes';
+  if (browserProjectId) return 'Saved';
+  if (projectSource === 'json') return 'Loaded from JSON - Never Saved to Browser';
+  return 'Never Saved';
+};
 type TopMenuId = 'templates' | 'scene' | 'camera' | 'view' | 'export' | 'project' | 'help';
 
 export function TopBar() {
@@ -46,6 +52,7 @@ export function TopBar() {
   const projectNotes = useStudioStore((state) => state.projectNotes);
   const isDirty = useStudioStore((state) => state.isDirty);
   const activeBrowserProjectId = useStudioStore((state) => state.activeBrowserProjectId);
+  const projectSource = useStudioStore((state) => state.projectSource);
   const settings = useStudioStore((state) => state.settings);
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
@@ -70,6 +77,7 @@ export function TopBar() {
   const resetCamera = useStudioStore((state) => state.resetCamera);
   const pushToast = useStudioStore((state) => state.pushToast);
   const exportFileName = settings.exportFileNameEdited ? settings.exportFileName : selectedObject?.name || 'hall-product-studio-render';
+  const saveStateLabel = getSaveStateLabel(isDirty, activeBrowserProjectId, projectSource);
   const [browserProjects, setBrowserProjects] = useState<BrowserProjectRecord[]>([]);
   const [customPresets, setCustomPresets] = useState<CustomRenderPreset[]>([]);
   const [storageStatus, setStorageStatus] = useState('');
@@ -156,10 +164,22 @@ export function TopBar() {
         return;
       }
 
-      if (isEditableTarget(event.target)) return;
-
       const hasModifier = event.ctrlKey || event.metaKey;
       const key = event.key.toLowerCase();
+
+      if (hasModifier && key === 's') {
+        event.preventDefault();
+        handleSaveBrowserProject(false);
+        return;
+      }
+
+      if (hasModifier && key === 'e') {
+        event.preventDefault();
+        requestExportScreenshot();
+        return;
+      }
+
+      if (isEditableTarget(event.target)) return;
 
       if (event.key === 'Escape') {
         selectObject(null);
@@ -175,16 +195,6 @@ export function TopBar() {
         return;
       }
 
-      if (hasModifier && key === 's') {
-        event.preventDefault();
-        handleSaveBrowserProject(!activeBrowserProjectId);
-        return;
-      }
-
-      if (hasModifier && key === 'e') {
-        event.preventDefault();
-        requestExportScreenshot();
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -207,10 +217,10 @@ export function TopBar() {
     }
 
     try {
-      loadProject(await readProjectFile(file), null);
-      setActiveBrowserProjectId(null);
+      loadProject(await readProjectFile(file), null, 'json');
       clearAutosaveDraft();
-      pushToast(`Loaded ${file.name}.`, 'success');
+      setStorageStatus(`Loaded ${file.name} from JSON. Never saved to this browser.`);
+      pushToast(`Loaded ${file.name}. Never saved to browser storage.`, 'success');
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Failed JSON load. Choose a compatible Hall Product Studio project file.', 'error');
     } finally {
@@ -231,9 +241,7 @@ export function TopBar() {
 
   const handleDownloadProject = () => {
     downloadProject(objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
-    markSaved();
-    clearAutosaveDraft();
-    pushToast('Project JSON saved.', 'success');
+    pushToast('Project JSON exported. Browser save state unchanged.', 'success');
   };
 
   const handleSaveBrowserProject = async (saveAs = false) => {
@@ -243,7 +251,6 @@ export function TopBar() {
       const project = buildCurrentProject();
       const existingId = saveAs ? null : activeBrowserProjectId;
       const existing = existingId ? await getBrowserProject(existingId) : undefined;
-      if (existing && !window.confirm(`Overwrite browser project "${existing.title}"?`)) return;
 
       const title =
         saveAs || !existing
@@ -258,8 +265,9 @@ export function TopBar() {
       markSaved();
       await clearAutosaveDraft();
       await refreshBrowserData();
-      setStorageStatus(`Saved "${record.title}" to this browser.`);
-      pushToast(`Saved "${record.title}" to this browser.`, 'success');
+      const action = existing ? 'Updated' : 'Saved';
+      setStorageStatus(`${action} "${record.title}" in this browser.`);
+      pushToast(`${action} "${record.title}" in this browser.`, 'success');
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Could not save to browser storage.', 'error');
     }
@@ -268,7 +276,7 @@ export function TopBar() {
   const handleOpenBrowserProject = async (record: BrowserProjectRecord) => {
     if (!confirmReset(`Open "${record.title}" from browser storage`)) return;
 
-    loadProject(record.project, record.id);
+    loadProject(record.project, record.id, 'browser');
     await clearAutosaveDraft();
     setStorageStatus(`Opened "${record.title}".`);
     pushToast(`Loaded "${record.title}".`, 'success');
@@ -338,7 +346,8 @@ export function TopBar() {
           <h1>Hall Product Studio</h1>
           <p className="project-title-line">
             {projectTitle}
-            {isDirty ? ' - Unsaved' : ''}
+            {' - '}
+            {saveStateLabel}
           </p>
         </div>
       </div>
@@ -604,11 +613,31 @@ export function TopBar() {
               type="button"
               className="primary-action"
               onClick={() => {
+                handleSaveBrowserProject(false);
+                closeTopMenu();
+              }}
+            >
+              Save Changes
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                handleSaveBrowserProject(true);
+                closeTopMenu();
+              }}
+            >
+              Save As Browser Project
+            </button>
+          </div>
+          <div className="menu-button-row">
+            <button
+              type="button"
+              onClick={() => {
                 handleDownloadProject();
                 closeTopMenu();
               }}
             >
-              Save JSON File
+              Export JSON Backup
             </button>
             <button
               type="button"
@@ -618,14 +647,6 @@ export function TopBar() {
               }}
             >
               Load JSON File
-            </button>
-          </div>
-          <div className="menu-button-row">
-            <button type="button" className="primary-action" onClick={() => handleSaveBrowserProject(false)}>
-              Save to Browser
-            </button>
-            <button type="button" onClick={() => handleSaveBrowserProject(true)}>
-              Save As Browser Project
             </button>
           </div>
           <section className="menu-section">
@@ -735,7 +756,7 @@ export function TopBar() {
           </button>
           <button
             type="button"
-            onClick={handleDownloadProject}
+            onClick={() => handleSaveBrowserProject(false)}
           >
             Save
           </button>

@@ -7,6 +7,7 @@ import type {
   MountingHelperKind,
   PrimitiveKind,
   ProductRenderPreset,
+  ProjectSource,
   ProjectTemplateId,
   ScreenshotSize,
   SceneTemplate,
@@ -47,6 +48,7 @@ interface StudioState {
   projectNotes: string;
   isDirty: boolean;
   activeBrowserProjectId: string | null;
+  projectSource: ProjectSource;
   selectedObjectId: string | null;
   transformMode: TransformMode;
   cameraPreset: CameraPreset;
@@ -90,7 +92,7 @@ interface StudioState {
   updateSettings: (settings: Partial<StudioSettings>) => void;
   updateExportFileName: (fileName: string) => void;
   updateProjectInfo: (info: Partial<Pick<StudioState, 'projectTitle' | 'projectNotes'>>) => void;
-  loadProject: (project: StudioProject, browserProjectId?: string | null) => void;
+  loadProject: (project: StudioProject, browserProjectId?: string | null, source?: ProjectSource) => void;
 }
 
 const DEFAULT_MATERIAL = {
@@ -224,6 +226,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   projectNotes: '',
   isDirty: false,
   activeBrowserProjectId: null,
+  projectSource: 'new',
   selectedObjectId: null,
   transformMode: 'translate',
   cameraPreset: 'isometric',
@@ -488,6 +491,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       settings: { ...DEFAULT_SETTINGS, ...template.settings, exportFileName: '', exportFileNameEdited: false },
       isDirty: false,
       activeBrowserProjectId: null,
+      projectSource: 'new',
     });
   },
 
@@ -496,11 +500,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       objects: [],
       selectedObjectId: null,
       isDirty: true,
+      activeBrowserProjectId: null,
+      projectSource: 'new',
       settings: { ...state.settings, exportFileName: '', exportFileNameEdited: false },
     })),
 
   markSaved: () => set({ isDirty: false }),
-  setActiveBrowserProjectId: (id) => set({ activeBrowserProjectId: id }),
+  setActiveBrowserProjectId: (id) => set({ activeBrowserProjectId: id, projectSource: id ? 'browser' : 'new' }),
 
   selectObject: (id) => set({ selectedObjectId: id }),
 
@@ -597,7 +603,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   updateExportFileName: (fileName) =>
     set((state) => ({ settings: { ...state.settings, exportFileName: fileName, exportFileNameEdited: true }, isDirty: true })),
   updateProjectInfo: (info) => set((state) => ({ ...state, ...info, isDirty: true })),
-  loadProject: (project, browserProjectId = null) =>
+  loadProject: (project, browserProjectId = null, source = browserProjectId ? 'browser' : 'json') =>
     set({
       objects: project.objects.map(withObjectDefaults),
       settings: { ...DEFAULT_SETTINGS, ...project.settings },
@@ -609,5 +615,6 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       selectedObjectId: null,
       isDirty: false,
       activeBrowserProjectId: browserProjectId,
+      projectSource: source,
     }),
 }));

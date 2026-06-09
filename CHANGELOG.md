@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.4.0
+
+- Added clearer browser save states: Never Saved, Saved, and Unsaved Changes.
+- Changed Save and Ctrl/Cmd+S to update the current browser project or start Save As when no browser project exists.
+- Kept JSON export/import separate from browser save status so JSON backups do not falsely mark projects as saved.
+- Updated Project panel and top-bar status text for browser-save clarity.
+
 ## v2.3.0
 
 - Added Move Panel-Selected Object Only wording and workflow for dense assembly movement.

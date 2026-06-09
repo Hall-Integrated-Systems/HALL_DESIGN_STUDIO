@@ -39,6 +39,12 @@ export type SelectionMode = 'canvas-select-move' | 'panel-select-only';
 
 export type AxisMoveLock = 'free' | 'x' | 'y' | 'z';
 
+export type ProjectSource = 'new' | 'browser' | 'json';
+
+export type SnapSize = 0.125 | 0.25 | 0.5 | 1;
+
+export type AlignmentAction = 'center-origin' | 'align-x' | 'align-y' | 'align-z' | 'match-height' | 'match-scale-x' | 'match-scale-y' | 'match-scale-z';
+
 export type ProjectTemplateId =
   | 'blank-studio'
   | 'website-product-tile'
@@ -144,6 +150,9 @@ export interface StudioSettings {
   ignoreLockedObjectsInCanvasSelection: boolean;
   axisHelperVisible: boolean;
   axisMoveLock: AxisMoveLock;
+  snapToGrid: boolean;
+  gridSnapSize: SnapSize;
+  duplicateOffset: number;
   screenshotSize: ScreenshotSize;
   exportFileName: string;
   exportFileNameEdited: boolean;

@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react';
 import { useStudioStore } from '../state/studioStore';
-import type { SelectionMode, StudioObject, Vec3 } from '../types/studioTypes';
+import type { ProjectSource, SelectionMode, StudioObject, Vec3 } from '../types/studioTypes';
 import { brandColorPresets, materialPresets } from '../config/presets';
 
 type VectorField = 'position' | 'rotation' | 'scale';
@@ -20,6 +20,8 @@ export function RightPropertiesPanel() {
   const projectTitle = useStudioStore((state) => state.projectTitle);
   const projectNotes = useStudioStore((state) => state.projectNotes);
   const isDirty = useStudioStore((state) => state.isDirty);
+  const activeBrowserProjectId = useStudioStore((state) => state.activeBrowserProjectId);
+  const projectSource = useStudioStore((state) => state.projectSource);
   const objects = useStudioStore((state) => state.objects);
   const settings = useStudioStore((state) => state.settings);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
@@ -35,7 +37,7 @@ export function RightPropertiesPanel() {
     <ProjectPanel
       title={projectTitle}
       notes={projectNotes}
-      isDirty={isDirty}
+      saveStateLabel={getSaveStateLabel(isDirty, activeBrowserProjectId, projectSource)}
       onTitleChange={(value) => updateProjectInfo({ projectTitle: value })}
       onNotesChange={(value) => updateProjectInfo({ projectNotes: value })}
     />
@@ -441,13 +443,13 @@ function MaterialPanel({
 function ProjectPanel({
   title,
   notes,
-  isDirty,
+  saveStateLabel,
   onTitleChange,
   onNotesChange,
 }: {
   title: string;
   notes: string;
-  isDirty: boolean;
+  saveStateLabel: string;
   onTitleChange: (value: string) => void;
   onNotesChange: (value: string) => void;
 }) {
@@ -455,7 +457,7 @@ function ProjectPanel({
     <section className="panel-section">
       <h3>
         Project
-        {isDirty ? <span className="unsaved-badge">Unsaved</span> : null}
+        <span className="unsaved-badge save-state-badge">{saveStateLabel}</span>
       </h3>
       <label className="field">
         <span>Title</span>
@@ -467,6 +469,13 @@ function ProjectPanel({
       </label>
     </section>
   );
+}
+
+function getSaveStateLabel(isDirty: boolean, browserProjectId: string | null, projectSource: ProjectSource) {
+  if (isDirty) return 'Unsaved Changes';
+  if (browserProjectId) return 'Saved';
+  if (projectSource === 'json') return 'Loaded from JSON - Never Saved to Browser';
+  return 'Never Saved';
 }
 
 function ObjectList({

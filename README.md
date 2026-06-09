@@ -33,9 +33,10 @@ npm run build
 4. Use translate, rotate, or scale controls to stage it.
 5. Apply brand colors, material presets, scene templates, or render presets.
 6. Add annotations, labels, decals, or simple display assets.
-7. Save to browser storage while iterating.
-8. Export a JSON backup for important work.
-9. Export PNG output from the top bar.
+7. Use Save to save changes to browser storage while iterating.
+8. Use Save As Browser Project to create a new browser-saved copy.
+9. Export a JSON backup for important work.
+10. Export PNG output from the top bar.
 
 ## Feature List
 
@@ -80,6 +81,10 @@ Use Photoshop Cutout or Transparent Cutout, hide floor/grid/shadows, use transpa
 ### Reusable Prototype Scene
 
 Start from a project template or Asset Library components, add the product model, add decals/annotations, save to browser storage for active work, then export a JSON backup.
+
+### Save State and Backups
+
+The project title shows one of three browser-save states: `Never Saved`, `Saved`, or `Unsaved Changes`. `Save` updates the current browser project when one is open; if the project has never been saved to browser storage, Save starts the Save As Browser Project flow. `Save As Browser Project` always creates a new browser-saved copy and makes that copy the current project. `Export JSON Backup` downloads a portable project file but does not change the browser save state. Loading a JSON backup starts from `Loaded from JSON - Never Saved to Browser` until you save it to browser storage.
 
 ### Bracket and Amp-Mount Planning
 

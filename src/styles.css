@@ -568,11 +568,22 @@ button.active,
 }
 
 .panel-section h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 10px;
   color: #b9c7d7;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.save-state-badge {
+  max-width: 100%;
+  margin-left: 0;
+  white-space: normal;
+  text-transform: none;
 }
 
 .field {
