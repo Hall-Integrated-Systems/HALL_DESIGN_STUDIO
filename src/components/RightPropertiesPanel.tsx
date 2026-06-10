@@ -15,7 +15,7 @@ function toRadians(degrees: number) {
   return (degrees * Math.PI) / 180;
 }
 
-export function RightPropertiesPanel() {
+export function RightPropertiesPanel({ className = '' }: { className?: string }) {
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
   const projectTitle = useStudioStore((state) => state.projectTitle);
   const projectNotes = useStudioStore((state) => state.projectNotes);
@@ -48,7 +48,7 @@ export function RightPropertiesPanel() {
 
   if (!selectedObject) {
     return (
-      <aside className="properties-panel">
+      <aside className={`properties-panel ${className}`.trim()}>
         <h2>Properties</h2>
         {projectPanel}
         <ObjectList
@@ -75,7 +75,7 @@ export function RightPropertiesPanel() {
   };
 
   return (
-    <aside className="properties-panel">
+    <aside className={`properties-panel ${className}`.trim()}>
       <h2>Properties</h2>
       {projectPanel}
       <ObjectList

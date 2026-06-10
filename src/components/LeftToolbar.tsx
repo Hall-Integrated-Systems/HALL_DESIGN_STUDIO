@@ -24,7 +24,7 @@ const supportedImageTypes = ['png', 'jpg', 'jpeg', 'webp'];
 const maxImageBytes = 12 * 1024 * 1024;
 const maxImagePixels = 24_000_000;
 
-export function LeftToolbar() {
+export function LeftToolbar({ className = '' }: { className?: string }) {
   const importInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const addPrimitive = useStudioStore((state) => state.addPrimitive);
@@ -95,7 +95,7 @@ export function LeftToolbar() {
   };
 
   return (
-    <aside className="left-toolbar" aria-label="Add objects">
+    <aside className={`left-toolbar ${className}`.trim()} aria-label="Add objects">
       <section className="toolbar-section simple-shapes-section">
         <h2>Simple Shapes</h2>
         <div className="toolbar-group shape-button-grid">
