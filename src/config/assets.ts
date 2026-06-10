@@ -112,6 +112,20 @@ export const builtInAssets: BuiltInAssetDefinition[] = [
     parts: [part('vertical', 'cube', [-0.28, 0.42, 0], [0.14, 0.84, 0.56]), part('foot', 'cube', [0.12, 0.07, 0], [0.94, 0.14, 0.56])],
   },
   {
+    id: 'l-bracket',
+    name: 'L Bracket',
+    category: 'Product Parts',
+    material: material('#8f99a4', 0.46, 0.3),
+    parts: [
+      part('vertical-plate', 'cube', [0, 0.62, -0.42], [1.4, 1.24, 0.12]),
+      part('base-plate', 'cube', [0, 0.06, 0.12], [1.4, 0.12, 1.2]),
+      part('vertical-hole-left', 'cylinder', [-0.42, 0.68, -0.34], [0.14, 0.035, 0.14], [Math.PI / 2, 0, 0], { color: '#11151c' }),
+      part('vertical-hole-right', 'cylinder', [0.42, 0.68, -0.34], [0.14, 0.035, 0.14], [Math.PI / 2, 0, 0], { color: '#11151c' }),
+      part('base-hole-left', 'cylinder', [-0.42, 0.13, 0.18], [0.14, 0.035, 0.14], [0, 0, 0], { color: '#11151c' }),
+      part('base-hole-right', 'cylinder', [0.42, 0.13, 0.18], [0.14, 0.035, 0.14], [0, 0, 0], { color: '#11151c' }),
+    ],
+  },
+  {
     id: 'label-tag',
     name: 'Label Tag',
     category: 'Background Props',

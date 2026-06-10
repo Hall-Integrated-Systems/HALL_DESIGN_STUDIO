@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.7.0
+
+- Replaced the header placeholder with the real Hall Integrated Systems circuit H logo while retaining a boxed H fallback for image-load failures.
+- Added a built-in L Bracket under Product Parts with normal selection, transform, lock, visibility, snapping, alignment, save/load, and PNG export behavior.
+- Added a touch-friendly Hide button to Templates, Scene, Camera, View, Export, Project, and Help / About panels.
+- Kept top panels open during ordinary checkbox, select, input, camera, and view adjustments so several settings can be changed before deliberately closing the panel.
+- Preserved outside-click, Escape, top-menu switching, canvas-tap, mobile drawer coordination, and transform-control hiding behavior from v2.6.1.
+
 ## v2.6.1
 
 - Fixed mobile and tablet top-menu behavior so opening Add or Properties drawers, tapping the canvas, using Escape, or choosing menu actions closes active top-bar menus.

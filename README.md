@@ -58,12 +58,13 @@ npm run build
 - Material presets for plastics, metals, rubber, prototype gray, clear plastic, and premium black
 - Scene templates and product render presets
 - Asset Library with reusable grouped starter assets
+- Built-in L Bracket asset for product, mount, and fabrication-layout scenes
 - Browser project storage with Recent Projects
 - JSON project export/import
 - One autosave draft with restore prompt
 - True high-resolution PNG export
 - Camera presets, camera distance, Frame Selected, and Frame All
-- Responsive grouped top-bar menus with outside-click and Escape close behavior
+- Responsive grouped top-bar menus with touch-friendly Hide controls, persistent multi-setting edits, outside-click, and Escape close behavior
 - Mobile and tablet responsive shell with bottom dock controls for Add and Properties drawers
 - Help / About panel with version, shortcuts, storage notes, and limitations
 
@@ -91,7 +92,7 @@ The project title shows one of three browser-save states: `Never Saved`, `Saved`
 
 ### Bracket and Amp-Mount Planning
 
-Use Mounting Helpers in the left toolbar to place visual round holes, slotted holes, washers, rivnuts, standoffs, bolt heads, centerlines, and clearance zones over brackets or plates. These markers are for layout renders and fabrication notes only; verify real-world hole sizes, spacing, edge distance, fastener clearances, and material requirements before drilling or cutting.
+Add the built-in `L Bracket` from Product Parts as a movable, lockable, hideable, snap-aware bracket starting point. Use Mounting Helpers in the left toolbar to place visual round holes, slotted holes, washers, rivnuts, standoffs, bolt heads, centerlines, and clearance zones over brackets or plates. These markers are for layout renders and fabrication notes only; verify real-world hole sizes, spacing, edge distance, fastener clearances, and material requirements before drilling or cutting.
 
 ### Snapping and Alignment
 
@@ -111,7 +112,9 @@ The X, Y, and Z fields in the properties panel match the transform colors: X red
 
 ### Mobile Workspace
 
-At phone and tablet widths, the top bar stays available while the Add toolbar and Properties panel move into bottom-dock drawers. Use `Add` to open object, asset, mounting-helper, image, annotation, and import controls. Use `Properties` to open project info, scene objects, transforms, materials, and object-specific settings. Opening a drawer, tapping the canvas, pressing Escape, or choosing a top-menu action closes active top-bar menus so only one overlay is active at a time. The canvas remains visible behind the drawers for orientation, and desktop layouts keep the standard left toolbar, canvas, and right properties panel.
+At phone and tablet widths, the top bar stays available while the Add toolbar and Properties panel move into bottom-dock drawers. Use `Add` to open object, asset, mounting-helper, image, annotation, and import controls. Use `Properties` to open project info, scene objects, transforms, materials, and object-specific settings. Top panels stay open while you make several ordinary setting changes; use the visible `Hide` button when finished. Opening a drawer or another top menu, tapping the canvas, clicking outside, or pressing Escape still closes the active top menu so only one overlay is active at a time. The canvas remains visible behind the drawers for orientation, and desktop layouts keep the standard left toolbar, canvas, and right properties panel.
+
+The header uses the real Hall Integrated Systems circuit H logo from `public/assets/brand/logo-h-circuit-nohalo.png`. A compact boxed H is retained only as a load-error fallback.
 
 ## Export Sizes
 

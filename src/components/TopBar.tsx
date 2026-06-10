@@ -88,6 +88,7 @@ export function TopBar({
   const [browserProjects, setBrowserProjects] = useState<BrowserProjectRecord[]>([]);
   const [customPresets, setCustomPresets] = useState<CustomRenderPreset[]>([]);
   const [storageStatus, setStorageStatus] = useState('');
+  const [brandLogoFailed, setBrandLogoFailed] = useState(false);
   const autosaveReadyRef = useRef(false);
 
   const buildCurrentProject = () => createProject(objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
@@ -286,6 +287,7 @@ export function TopBar({
     await clearAutosaveDraft();
     setStorageStatus(`Opened "${record.title}".`);
     pushToast(`Loaded "${record.title}".`, 'success');
+    closeTopMenu();
   };
 
   const handleDeleteBrowserProject = async (record: BrowserProjectRecord) => {
@@ -347,7 +349,16 @@ export function TopBar({
   return (
     <header className="top-bar">
       <div className="brand-block">
-        <span className="brand-mark">H</span>
+        {brandLogoFailed ? (
+          <span className="brand-mark brand-mark-fallback" aria-label="Hall Integrated Systems">H</span>
+        ) : (
+          <img
+            className="brand-mark"
+            src="/assets/brand/logo-h-circuit-nohalo.png"
+            alt="Hall Integrated Systems"
+            onError={() => setBrandLogoFailed(true)}
+          />
+        )}
         <div>
           <h1>Hall Product Studio</h1>
           <p className="project-title-line">
@@ -724,6 +735,7 @@ export function TopBar({
                 if (objects.length === 0 || confirmReset('Clear the scene')) {
                   clearScene();
                   pushToast('Scene cleared.', 'info');
+                  closeTopMenu();
                 }
               }}
             >
@@ -832,15 +844,13 @@ function MenuGroup({
         {title}
       </button>
       {isOpen && (
-        <div
-          className="menu-panel"
-          onClick={(event) => {
-            if (event.target instanceof HTMLElement && event.target.closest('button:not(.menu-trigger)')) {
-              setOpenMenu(null);
-            }
-          }}
-          onChange={() => setOpenMenu(null)}
-        >
+        <div className="menu-panel">
+          <div className="menu-panel-header">
+            <strong>{title}</strong>
+            <button type="button" className="menu-hide-button" onClick={() => setOpenMenu(null)}>
+              Hide
+            </button>
+          </div>
           {children}
         </div>
       )}
@@ -872,27 +882,33 @@ function TemplatePicker({
       </button>
       {isOpen && (
         <div className="template-panel">
-        <div className="menu-section">
-          <h2>New From Template</h2>
+          <div className="menu-panel-header">
+            <strong>Templates</strong>
+            <button type="button" className="menu-hide-button" onClick={() => setOpenMenu(null)}>
+              Hide
+            </button>
+          </div>
+          <div className="menu-section">
+            <h2>New From Template</h2>
+          </div>
+          <select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value as ProjectTemplateId)}>
+            {projectTemplates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))}
+          </select>
+          <div className="template-meta">
+            <strong>{selectedTemplate.name}</strong>
+            <span>{selectedTemplate.description}</span>
+            <span>Export: {selectedTemplate.recommendedExportSize}</span>
+            <span>Background: {selectedTemplate.backgroundMode}</span>
+            <span>Use: {selectedTemplate.intendedUse}</span>
+          </div>
+          <button type="button" onClick={() => onApply(selectedTemplate.id)}>
+            Apply Template
+          </button>
         </div>
-        <select value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value as ProjectTemplateId)}>
-          {projectTemplates.map((template) => (
-            <option key={template.id} value={template.id}>
-              {template.name}
-            </option>
-          ))}
-        </select>
-        <div className="template-meta">
-          <strong>{selectedTemplate.name}</strong>
-          <span>{selectedTemplate.description}</span>
-          <span>Export: {selectedTemplate.recommendedExportSize}</span>
-          <span>Background: {selectedTemplate.backgroundMode}</span>
-          <span>Use: {selectedTemplate.intendedUse}</span>
-        </div>
-        <button type="button" onClick={() => onApply(selectedTemplate.id)}>
-          Apply Template
-        </button>
-      </div>
       )}
     </div>
   );
