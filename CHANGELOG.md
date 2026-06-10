@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.7.1
+
+- Moved the desktop transform mode and axis-lock toolbar into the fixed header controls, with a clean second row at standard desktop widths and inline placement on wider screens.
+- Kept the compact canvas transform toolbar for tablet and phone layouts, including overlay-aware hiding while top menus or drawers are active.
+
 ## v2.7.0
 
 - Replaced the header placeholder with the real Hall Integrated Systems circuit H logo while retaining a boxed H fallback for image-load failures.

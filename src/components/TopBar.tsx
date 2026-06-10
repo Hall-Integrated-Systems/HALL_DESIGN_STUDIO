@@ -5,6 +5,7 @@ import { useStudioStore } from '../state/studioStore';
 import type { BackgroundMode, CameraPreset, ProjectSource, ProjectTemplateId, ScreenshotSize, SnapSize } from '../types/studioTypes';
 import { APP_VERSION, productRenderPresets, sceneTemplates } from '../config/presets';
 import { projectTemplates } from '../config/projectTemplates';
+import { TransformToolbar } from './TransformToolbar';
 import {
   clearAutosaveDraft,
   createBrowserProjectRecord,
@@ -368,6 +369,8 @@ export function TopBar({
           </p>
         </div>
       </div>
+
+      <TransformToolbar className="header-transform-toolbar" />
 
       <div className="top-actions">
         <TemplatePicker

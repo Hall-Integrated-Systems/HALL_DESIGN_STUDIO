@@ -5,10 +5,10 @@ import type { ReactNode } from 'react';
 import type { Mesh, MeshStandardMaterial, Object3D, Quaternion } from 'three';
 import { Box3, Box3Helper, Color, DoubleSide, FrontSide, Group, TextureLoader, Vector2, Vector3 } from 'three';
 import { ObjectTransformControls } from './ObjectTransformControls';
+import { TransformToolbar } from './TransformToolbar';
 import { useStudioStore } from '../state/studioStore';
 import type {
   AnnotationData,
-  AxisMoveLock,
   CameraPreset,
   MountingHelperData,
   PrimitiveKind,
@@ -33,10 +33,7 @@ function StudioScene() {
   const objects = useStudioStore((state) => state.objects);
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
   const selectObject = useStudioStore((state) => state.selectObject);
-  const transformMode = useStudioStore((state) => state.transformMode);
-  const setTransformMode = useStudioStore((state) => state.setTransformMode);
   const settings = useStudioStore((state) => state.settings);
-  const updateSettings = useStudioStore((state) => state.updateSettings);
   const isExporting = useStudioStore((state) => state.isExporting);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
 
@@ -95,26 +92,7 @@ function StudioScene() {
       <OrbitControls enabled={orbitEnabled} makeDefault minDistance={1.5} maxDistance={60} />
 
       <Html fullscreen className="mode-overlay">
-        <div className="mode-selector">
-          {(['translate', 'rotate', 'scale'] as const).map((mode) => (
-            <button key={mode} type="button" className={mode === transformMode ? 'active' : ''} onClick={() => setTransformMode(mode)}>
-              {mode}
-            </button>
-          ))}
-          <div className="axis-lock-controls" aria-label="Axis movement lock">
-            {axisLockOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`axis-lock-button axis-lock-${option.value} ${settings.axisMoveLock === option.value ? 'active' : ''}`}
-                onClick={() => updateSettings({ axisMoveLock: option.value })}
-                title={option.title}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TransformToolbar className="canvas-transform-toolbar" />
       </Html>
 
       <mesh
@@ -127,13 +105,6 @@ function StudioScene() {
     </>
   );
 }
-
-const axisLockOptions: Array<{ value: AxisMoveLock; label: string; title: string }> = [
-  { value: 'free', label: 'Free', title: 'Free movement' },
-  { value: 'x', label: 'X only', title: 'Move on X only' },
-  { value: 'y', label: 'Y only', title: 'Move on Y only' },
-  { value: 'z', label: 'Z only', title: 'Move on Z only' },
-];
 
 function SceneObject({
   object,

@@ -109,7 +109,7 @@ input[type='range'] {
 .top-bar,
 .left-toolbar,
 .properties-panel,
-.mode-selector,
+.transform-toolbar,
 .loading-label {
   border: 1px solid rgba(104, 123, 145, 0.35);
   background: rgba(12, 17, 24, 0.88);
@@ -123,7 +123,8 @@ input[type='range'] {
   top: 16px;
   left: 16px;
   right: 16px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(240px, 360px) minmax(0, 1fr);
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -133,6 +134,8 @@ input[type='range'] {
 }
 
 .brand-block {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -193,11 +196,20 @@ input[type='range'] {
 }
 
 .top-actions {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
   min-width: 0;
+}
+
+.header-transform-toolbar {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .top-actions button {
@@ -276,6 +288,7 @@ input[type='range'] {
   top: -12px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
   margin: -12px -12px 0;
@@ -850,34 +863,44 @@ button.active,
   pointer-events: none;
 }
 
-.mode-selector {
-  pointer-events: auto;
-  position: absolute;
-  top: 104px;
-  left: 50%;
+.transform-toolbar {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 6px;
   padding: 6px;
   border-radius: 8px;
-  transform: translateX(-50%);
 }
 
-.mode-selector button {
-  min-width: 86px;
-  padding: 0 10px;
-  text-transform: capitalize;
-}
-
+.transform-mode-controls,
 .axis-lock-controls {
   display: flex;
   gap: 4px;
+}
+
+.transform-toolbar button {
+  min-width: 72px;
+  min-height: 30px;
+  padding: 0 9px;
+  text-transform: capitalize;
+}
+
+.canvas-transform-toolbar {
+  display: none;
+  pointer-events: auto;
+  position: absolute;
+  top: 104px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.axis-lock-controls {
   padding-left: 6px;
   border-left: 1px solid rgba(104, 123, 145, 0.35);
 }
 
-.mode-selector .axis-lock-button {
+.transform-toolbar .axis-lock-button {
   min-width: 64px;
   font-size: 12px;
   text-transform: none;
@@ -912,6 +935,37 @@ button.active,
 
 .axis-lock-button.active.axis-lock-z {
   background: #5f9dff;
+}
+
+@media (min-width: 1700px) {
+  .top-bar {
+    grid-template-columns: minmax(240px, 360px) auto minmax(0, 1fr);
+  }
+
+  .header-transform-toolbar {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    justify-content: center;
+  }
+
+  .top-actions {
+    grid-column: 3;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1699px) {
+  .left-toolbar,
+  .properties-panel {
+    top: 150px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1199px) {
+  .left-toolbar,
+  .properties-panel {
+    top: 184px;
+  }
 }
 
 .loading-label {
@@ -969,7 +1023,12 @@ button.active,
 }
 
 @media (max-width: 1024px) {
+  .header-transform-toolbar {
+    display: none;
+  }
+
   .top-bar {
+    display: flex;
     z-index: 27;
     top: 10px;
     right: 10px;
@@ -984,6 +1043,8 @@ button.active,
   }
 
   .brand-block {
+    grid-column: auto;
+    grid-row: auto;
     min-width: 0;
     max-width: 100%;
   }
@@ -993,6 +1054,8 @@ button.active,
   }
 
   .top-actions {
+    grid-column: auto;
+    grid-row: auto;
     width: 100%;
     justify-content: flex-start;
     gap: 6px;
@@ -1108,7 +1171,8 @@ button.active,
     padding: 0 12px;
   }
 
-  .mode-selector {
+  .canvas-transform-toolbar {
+    display: flex;
     top: 136px;
     right: 10px;
     left: 10px;
@@ -1118,7 +1182,7 @@ button.active,
     transform: none;
   }
 
-  .mode-selector button {
+  .canvas-transform-toolbar button {
     min-width: 70px;
   }
 
@@ -1127,12 +1191,12 @@ button.active,
     border-left: 0;
   }
 
-  .mode-selector .axis-lock-button {
+  .canvas-transform-toolbar .axis-lock-button {
     min-width: 58px;
   }
 
-  .mobile-panel-active .mode-selector,
-  .top-menu-active .mode-selector {
+  .mobile-panel-active .canvas-transform-toolbar,
+  .top-menu-active .canvas-transform-toolbar {
     display: none;
   }
 
@@ -1225,13 +1289,13 @@ button.active,
     padding: 0 12px;
   }
 
-  .mode-selector {
+  .canvas-transform-toolbar {
     top: 130px;
     right: 8px;
     left: 8px;
   }
 
-  .mode-selector button {
+  .canvas-transform-toolbar button {
     min-width: 68px;
   }
 
@@ -1240,7 +1304,7 @@ button.active,
     border-left: 0;
   }
 
-  .mode-selector .axis-lock-button {
+  .canvas-transform-toolbar .axis-lock-button {
     min-width: 56px;
   }
 
