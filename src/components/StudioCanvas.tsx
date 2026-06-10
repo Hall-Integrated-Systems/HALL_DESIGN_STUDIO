@@ -19,9 +19,9 @@ import type {
 } from '../types/studioTypes';
 import { downloadDataUrl, getScreenshotDimensions } from '../utils/exportScreenshot';
 
-export function StudioCanvas() {
+export function StudioCanvas({ onCanvasPointerDown }: { onCanvasPointerDown?: () => void }) {
   return (
-    <section className="canvas-stage">
+    <section className="canvas-stage" onPointerDownCapture={onCanvasPointerDown}>
       <Canvas camera={{ position: [4, 3, 6], fov: 45 }} gl={{ preserveDrawingBuffer: true, antialias: true, alpha: true }} shadows>
         <StudioScene />
       </Canvas>

@@ -932,114 +932,68 @@ button.active,
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .top-bar {
+    top: 10px;
+    right: 10px;
+    left: 10px;
     align-items: flex-start;
     flex-direction: column;
-    gap: 10px;
-  }
-
-  .brand-block {
-    max-width: 100%;
-  }
-
-  .project-title-line {
-    max-width: calc(100vw - 120px);
-  }
-
-  .top-actions {
-    justify-content: flex-start;
-  }
-
-  .left-toolbar {
-    top: 188px;
-    width: min(230px, calc(100vw - 32px));
-    max-height: calc(58vh - 188px);
-    overflow-y: auto;
-  }
-
-  .properties-panel {
-    top: 188px;
-    right: 16px;
-    left: auto;
-    bottom: 16px;
-    width: min(340px, calc(100vw - 278px));
-    max-height: none;
-  }
-
-  .mode-selector {
-    top: 188px;
-    left: auto;
-    right: 16px;
-    transform: none;
-  }
-}
-
-@media (max-width: 640px) {
-  body {
-    overflow: hidden;
-  }
-
-  .top-bar {
-    top: 8px;
-    right: 8px;
-    left: 8px;
     gap: 8px;
     min-height: 0;
-    max-height: 36vh;
+    max-height: 34vh;
     padding: 10px;
     overflow: visible;
   }
 
-  .brand-mark {
-    width: 32px;
-    height: 32px;
+  .brand-block {
+    min-width: 0;
+    max-width: 100%;
   }
 
-  .brand-block h1 {
-    font-size: 16px;
+  .project-title-line {
+    max-width: calc(100vw - 96px);
   }
 
   .top-actions {
     width: 100%;
+    justify-content: flex-start;
     gap: 6px;
     overflow-x: auto;
-    padding-bottom: 2px;
+    overflow-y: visible;
+    padding: 2px 8px 6px;
+    margin: 0 -4px;
     flex-wrap: nowrap;
+    scroll-padding-inline: 8px;
     scrollbar-width: thin;
   }
 
-  .control-cluster,
+  .template-picker,
+  .menu-group,
   .quick-actions {
     flex: 0 0 auto;
-  }
-
-  .template-picker > .menu-trigger,
-  .menu-group > .menu-trigger {
-    min-height: 32px;
-    padding: 0 9px;
-    font-size: 12px;
   }
 
   .template-panel,
   .menu-panel {
     position: fixed;
-    top: 118px;
-    right: 8px;
-    left: 8px;
+    z-index: 23;
+    top: 126px;
+    right: 10px;
+    left: 10px;
     width: auto;
-    max-height: calc(100vh - 196px);
+    max-height: calc(100vh - 214px);
   }
 
   .left-toolbar {
     z-index: 26;
     top: auto;
-    right: 8px;
-    bottom: 74px;
-    left: 8px;
+    right: 10px;
+    bottom: 78px;
+    left: 10px;
     width: auto;
-    max-height: min(64vh, calc(100vh - 180px));
-    transform: translateY(calc(100% + 94px));
+    max-height: min(64vh, calc(100vh - 188px));
+    transform: translateY(calc(100% + 98px));
     opacity: 0;
     pointer-events: none;
     transition:
@@ -1048,13 +1002,14 @@ button.active,
   }
 
   .properties-panel {
+    z-index: 26;
     top: auto;
-    right: 8px;
-    left: 8px;
-    bottom: 74px;
+    right: 10px;
+    left: 10px;
+    bottom: 78px;
     width: auto;
-    max-height: min(64vh, calc(100vh - 180px));
-    transform: translateY(calc(100% + 94px));
+    max-height: min(64vh, calc(100vh - 188px));
+    transform: translateY(calc(100% + 98px));
     opacity: 0;
     pointer-events: none;
     transition:
@@ -1091,19 +1046,136 @@ button.active,
   .mobile-shell-dock {
     position: absolute;
     z-index: 28;
-    right: 8px;
-    bottom: 8px;
-    left: 8px;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    min-height: 52px;
+    min-height: 54px;
     padding: 8px;
     border: 1px solid rgba(104, 123, 145, 0.42);
     border-radius: 8px;
     background: rgba(12, 17, 24, 0.92);
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
     backdrop-filter: blur(16px);
+  }
+
+  .mobile-shell-dock button {
+    min-height: 38px;
+    padding: 0 12px;
+  }
+
+  .mode-selector {
+    top: 136px;
+    right: 10px;
+    left: 10px;
+    justify-content: center;
+    max-width: none;
+    overflow-x: auto;
+    transform: none;
+  }
+
+  .mode-selector button {
+    min-width: 70px;
+  }
+
+  .axis-lock-controls {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .mode-selector .axis-lock-button {
+    min-width: 58px;
+  }
+
+  .mobile-panel-active .mode-selector,
+  .top-menu-active .mode-selector {
+    display: none;
+  }
+
+  .toast-host {
+    right: 10px;
+    bottom: 74px;
+    width: calc(100vw - 20px);
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow: hidden;
+  }
+
+  .top-bar {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    gap: 8px;
+    min-height: 0;
+    max-height: 36vh;
+    padding: 10px;
+    overflow: visible;
+  }
+
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-block h1 {
+    font-size: 16px;
+  }
+
+  .top-actions {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .template-picker > .menu-trigger,
+  .menu-group > .menu-trigger {
+    min-height: 32px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .template-panel,
+  .menu-panel {
+    top: 118px;
+    right: 8px;
+    left: 8px;
+    max-height: calc(100vh - 196px);
+  }
+
+  .left-toolbar {
+    right: 8px;
+    bottom: 74px;
+    left: 8px;
+    max-height: min(64vh, calc(100vh - 180px));
+    transform: translateY(calc(100% + 94px));
+  }
+
+  .properties-panel {
+    right: 8px;
+    left: 8px;
+    bottom: 74px;
+    max-height: min(64vh, calc(100vh - 180px));
+    transform: translateY(calc(100% + 94px));
+  }
+
+  .left-toolbar.mobile-panel-open,
+  .properties-panel.mobile-panel-open {
+    transform: translateY(0);
+  }
+
+  .mobile-panel-scrim {
+    background: rgba(3, 6, 9, 0.38);
+  }
+
+  .mobile-shell-dock {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    min-height: 52px;
   }
 
   .mobile-shell-dock button {
@@ -1114,12 +1186,7 @@ button.active,
   .mode-selector {
     top: 130px;
     right: 8px;
-    bottom: auto;
     left: 8px;
-    justify-content: center;
-    max-width: none;
-    overflow-x: auto;
-    transform: none;
   }
 
   .mode-selector button {
@@ -1133,10 +1200,6 @@ button.active,
 
   .mode-selector .axis-lock-button {
     min-width: 56px;
-  }
-
-  .mobile-panel-active .mode-selector {
-    display: none;
   }
 
   .toast-host {

@@ -43,9 +43,15 @@ const getSaveStateLabel = (isDirty: boolean, browserProjectId: string | null, pr
   if (projectSource === 'json') return 'Loaded from JSON - Never Saved to Browser';
   return 'Never Saved';
 };
-type TopMenuId = 'templates' | 'scene' | 'camera' | 'view' | 'export' | 'project' | 'help';
+export type TopMenuId = 'templates' | 'scene' | 'camera' | 'view' | 'export' | 'project' | 'help';
 
-export function TopBar() {
+export function TopBar({
+  openMenu,
+  setOpenMenu,
+}: {
+  openMenu: TopMenuId | null;
+  setOpenMenu: (menu: TopMenuId | null) => void;
+}) {
   const loadInputRef = useRef<HTMLInputElement>(null);
   const menuRefs = useRef<Partial<Record<TopMenuId, HTMLDivElement | null>>>({});
   const objects = useStudioStore((state) => state.objects);
@@ -82,7 +88,6 @@ export function TopBar() {
   const [browserProjects, setBrowserProjects] = useState<BrowserProjectRecord[]>([]);
   const [customPresets, setCustomPresets] = useState<CustomRenderPreset[]>([]);
   const [storageStatus, setStorageStatus] = useState('');
-  const [openMenu, setOpenMenu] = useState<TopMenuId | null>(null);
   const autosaveReadyRef = useRef(false);
 
   const buildCurrentProject = () => createProject(objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
@@ -826,7 +831,19 @@ function MenuGroup({
       <button type="button" className="menu-trigger" aria-expanded={isOpen} onClick={() => setOpenMenu(isOpen ? null : id)}>
         {title}
       </button>
-      {isOpen && <div className="menu-panel">{children}</div>}
+      {isOpen && (
+        <div
+          className="menu-panel"
+          onClick={(event) => {
+            if (event.target instanceof HTMLElement && event.target.closest('button:not(.menu-trigger)')) {
+              setOpenMenu(null);
+            }
+          }}
+          onChange={() => setOpenMenu(null)}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 }

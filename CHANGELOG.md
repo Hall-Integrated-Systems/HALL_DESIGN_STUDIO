@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.6.1
+
+- Fixed mobile and tablet top-menu behavior so opening Add or Properties drawers, tapping the canvas, using Escape, or choosing menu actions closes active top-bar menus.
+- Hid transform controls while mobile/tablet menus or drawers are active so View and Project menus no longer block drawer and Scene Objects workflows.
+- Extended the responsive drawer shell to tablet widths and tightened top-bar horizontal scrolling to avoid clipped first actions on phone layouts.
+
+## v2.6.0
+
+- Added a mobile responsive shell at narrow phone widths.
+- Added bottom dock controls for opening the Add toolbar and Properties panel as mobile drawers.
+- Kept the Three.js canvas visible behind mobile panels while preserving the desktop side-panel workspace.
+- Improved mobile top-bar spacing and scrolling so menus and quick actions remain reachable on small screens.
+
 ## v2.5.0
 
 - Added Snap to Grid with selectable snap sizes and snap-aware position editing, transform movement, and duplication.

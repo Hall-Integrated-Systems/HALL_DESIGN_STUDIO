@@ -64,6 +64,7 @@ npm run build
 - True high-resolution PNG export
 - Camera presets, camera distance, Frame Selected, and Frame All
 - Responsive grouped top-bar menus with outside-click and Escape close behavior
+- Mobile and tablet responsive shell with bottom dock controls for Add and Properties drawers
 - Help / About panel with version, shortcuts, storage notes, and limitations
 
 ## Common Workflows
@@ -107,6 +108,10 @@ Suggested amp-mount workflow: add a base plate, add Round Hole or Rivnut markers
 Use `Canvas Select + Move` for normal staging where clicking an object selects it. Switch to `Panel Select Only` in the View menu when parts overlap or transform arrows sit over nearby objects; then choose the active layer from the right Scene Objects list and use transform controls without accidental canvas reselection. Enable `Move Panel-Selected Object Only` when the selected object should be controlled only through the panel-selected layer and transform gizmo, with canvas picking suppressed. Use the axis lock buttons near the transform mode controls for `Free`, `X only`, `Y only`, or `Z only` movement when placing real-world parts. Enable `Ignore locked objects in canvas selection` when base plates, rails, amp bodies, or reference parts should stay selectable from the panel but not by canvas clicks.
 
 The X, Y, and Z fields in the properties panel match the transform colors: X red, Y green, Z blue. Axis lock buttons and the direction helper use the same colors. The View menu also includes a direction helper with +X/-X, +Y/-Y, and +Z/-Z cues for front/back/left/right/up/down orientation while planning real physical layouts such as amp mounts and brackets. The helper and transform controls are editor aids and are hidden from PNG export; mounting helpers remain visible because they are intentional scene objects.
+
+### Mobile Workspace
+
+At phone and tablet widths, the top bar stays available while the Add toolbar and Properties panel move into bottom-dock drawers. Use `Add` to open object, asset, mounting-helper, image, annotation, and import controls. Use `Properties` to open project info, scene objects, transforms, materials, and object-specific settings. Opening a drawer, tapping the canvas, pressing Escape, or choosing a top-menu action closes active top-bar menus so only one overlay is active at a time. The canvas remains visible behind the drawers for orientation, and desktop layouts keep the standard left toolbar, canvas, and right properties panel.
 
 ## Export Sizes
 
