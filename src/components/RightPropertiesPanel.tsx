@@ -2,7 +2,13 @@ import type { ChangeEvent, MouseEvent } from 'react';
 import { useStudioStore } from '../state/studioStore';
 import type { AlignmentAction, ProjectSource, SelectionMode, StudioGroup, StudioObject, Vec3 } from '../types/studioTypes';
 import { brandColorPresets, materialPresets } from '../config/presets';
-import { CUSTOM_ASSEMBLIES_CHANGED_EVENT, createCustomAssemblyRecord, saveCustomAssembly } from '../utils/localProjectStorage';
+import {
+  CUSTOM_ASSEMBLIES_CHANGED_EVENT,
+  createCustomAssemblyRecord,
+  getAvailableCustomAssemblyName,
+  listCustomAssemblies,
+  saveCustomAssembly,
+} from '../utils/localProjectStorage';
 
 type VectorField = 'position' | 'rotation' | 'scale';
 
@@ -70,7 +76,9 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
     if (!name) return;
 
     try {
-      const assembly = createCustomAssemblyRecord({ name, group, objects, groups });
+      const existingAssemblies = await listCustomAssemblies();
+      const assemblyName = getAvailableCustomAssemblyName(name, existingAssemblies);
+      const assembly = createCustomAssemblyRecord({ name: assemblyName, group, objects, groups });
       const assemblyBytes = new Blob([JSON.stringify(assembly)]).size;
 
       if (assemblyBytes > LARGE_ASSEMBLY_WARNING_BYTES) {

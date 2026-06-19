@@ -297,9 +297,27 @@ const cloneObjectAtPosition = (object: StudioObject, id: string, name: string, p
   })),
 });
 
-const getAssemblyInsertOrigin = (settings: StudioSettings): Vec3 => {
-  const offset = settings.duplicateOffset;
-  return snapVector([offset, 0, offset], settings);
+const getSceneCenter = (objects: StudioObject[]): Vec3 => {
+  if (objects.length === 0) return [0, 0, 0];
+
+  const bounds = objects.reduce(
+    (result, object) => ({
+      minX: Math.min(result.minX, object.position[0]),
+      maxX: Math.max(result.maxX, object.position[0]),
+      minZ: Math.min(result.minZ, object.position[2]),
+      maxZ: Math.max(result.maxZ, object.position[2]),
+    }),
+    { minX: Number.POSITIVE_INFINITY, maxX: Number.NEGATIVE_INFINITY, minZ: Number.POSITIVE_INFINITY, maxZ: Number.NEGATIVE_INFINITY },
+  );
+
+  return [Number(((bounds.minX + bounds.maxX) / 2).toFixed(4)), 0, Number(((bounds.minZ + bounds.maxZ) / 2).toFixed(4))];
+};
+
+const getAssemblyInsertOrigin = (settings: StudioSettings, objects: StudioObject[]): Vec3 => {
+  const sceneCenter = getSceneCenter(objects);
+  const requestedOffset = settings.duplicateOffset > 0 ? settings.duplicateOffset : 0.35;
+  const offset = settings.snapToGrid ? Math.max(requestedOffset, settings.gridSnapSize) : requestedOffset;
+  return snapVector([sceneCenter[0] + offset, 0, sceneCenter[2] + offset], settings);
 };
 
 const getUniqueName = (baseName: string, existingNames: Set<string>) => {
@@ -642,15 +660,21 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   addCustomAssemblyToScene: (assembly) =>
     set((state) => {
-      if (assembly.objects.length === 0 || assembly.groups.length === 0) return state;
+      const assemblyObjects = Array.isArray(assembly.objects)
+        ? assembly.objects.filter((object): object is StudioObject => Boolean(object) && Array.isArray(object.position))
+        : [];
+      const assemblyGroups = Array.isArray(assembly.groups)
+        ? assembly.groups.filter((group): group is StudioGroup => Boolean(group) && Array.isArray(group.objectIds))
+        : [];
+      if (assemblyObjects.length === 0 || assemblyGroups.length === 0) return state;
 
       const objectIdMap = new Map<string, string>();
       const groupIdMap = new Map<string, string>();
       const existingObjectNames = new Set(state.objects.map((object) => object.name));
       const existingGroupNames = new Set(state.groups.map((group) => group.name));
-      const insertOrigin = getAssemblyInsertOrigin(state.settings);
+      const insertOrigin = getAssemblyInsertOrigin(state.settings, state.objects);
 
-      const nextObjects = assembly.objects.map((object) => {
+      const nextObjects = assemblyObjects.map((object) => {
         const id = makeId();
         objectIdMap.set(object.id, id);
         const name = getUniqueName(object.name, existingObjectNames);
@@ -662,7 +686,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         ]);
       });
 
-      const nextGroups = assembly.groups
+      const nextGroups = assemblyGroups
         .map((group) => {
           const id = makeId();
           groupIdMap.set(group.id, id);

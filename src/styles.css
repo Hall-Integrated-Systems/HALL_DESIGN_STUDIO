@@ -511,10 +511,58 @@ button.active,
   display: flex;
   flex-direction: column;
   gap: 14px;
-  width: 230px;
+  width: var(--left-toolbar-width, 230px);
   padding: 12px;
+  padding-right: 18px;
   overflow-y: auto;
   border-radius: 8px;
+}
+
+.left-toolbar-resize-handle {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 2px;
+  bottom: 10px;
+  width: 12px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: ew-resize;
+  transform: none;
+}
+
+.left-toolbar-resize-handle::before {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 5px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(142, 160, 179, 0.46);
+  content: '';
+}
+
+.left-toolbar-resize-handle:hover,
+.left-toolbar-resize-handle:focus-visible,
+.left-toolbar-resize-handle:active {
+  border: 0;
+  background: rgba(120, 167, 216, 0.1);
+  transform: none;
+}
+
+.left-toolbar-resize-handle:hover::before,
+.left-toolbar-resize-handle:focus-visible::before,
+.left-toolbar-resize-handle:active::before {
+  background: #9ec5ef;
+}
+
+.left-toolbar-resizing,
+.left-toolbar-resizing * {
+  cursor: ew-resize !important;
+  user-select: none;
 }
 
 .toolbar-group {
@@ -879,11 +927,39 @@ button.active,
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  min-height: 42px;
   min-width: 0;
+  padding: 6px 9px;
   text-align: left;
 }
 
+.custom-assembly-label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.15;
+}
+
+.custom-assembly-name,
+.custom-assembly-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-assembly-name {
+  font-size: 12px;
+}
+
+.custom-assembly-meta {
+  color: #9caec2;
+  font-size: 11px;
+  font-weight: 500;
+}
+
 .custom-assembly-row .danger-button {
+  min-width: 58px;
   padding: 0 8px;
   font-size: 12px;
 }
@@ -1137,12 +1213,17 @@ button.active,
     left: 10px;
     width: auto;
     max-height: min(64vh, calc(100vh - 188px));
+    padding: 12px;
     transform: translateY(calc(100% + 98px));
     opacity: 0;
     pointer-events: none;
     transition:
       opacity 180ms ease,
       transform 180ms ease;
+  }
+
+  .left-toolbar-resize-handle {
+    display: none;
   }
 
   .properties-panel {

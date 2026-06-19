@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.8.3
+
+- Added a desktop drag handle to resize the left Add sidebar, with browser-local width persistence and safe width bounds.
+- Added native hover titles for Custom Assembly rows so full names, object counts, and saved dates can be checked before inserting.
+- Gave Custom Assembly rows a little more room while keeping the delete action compact.
+
+## v2.8.2
+
+- Added object count and saved-date metadata to the Custom Assemblies list, with tolerant handling for older browser-local records.
+- Custom Assembly saves now preserve existing entries by assigning duplicate names the next simple numeric suffix.
+- Inserted Custom Assemblies now appear slightly offset from the current scene center while preserving relative object layout and root group selection.
+
 ## v2.8.1
 
 - Added browser-local Custom Assemblies for saving a selected group as a reusable assembly.

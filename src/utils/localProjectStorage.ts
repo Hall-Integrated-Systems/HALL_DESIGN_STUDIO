@@ -79,6 +79,38 @@ const getAssemblyOrigin = (objects: StudioObject[]): Vec3 => {
   ];
 };
 
+const getCustomAssemblySortTime = (assembly: Partial<CustomAssembly>) => {
+  const dateValue = assembly.updatedAt ?? assembly.createdAt;
+  const time = typeof dateValue === 'string' ? Date.parse(dateValue) : Number.NaN;
+  return Number.isFinite(time) ? time : 0;
+};
+
+export function getAvailableCustomAssemblyName(
+  requestedName: string,
+  assemblies: Array<Partial<Pick<CustomAssembly, 'name'>>>,
+) {
+  const trimmedName = requestedName.trim() || 'Custom Assembly';
+  const existingNames = new Set(
+    assemblies
+      .map((assembly) => (typeof assembly.name === 'string' ? assembly.name.trim() : ''))
+      .filter((name) => name.length > 0),
+  );
+
+  if (!existingNames.has(trimmedName)) return trimmedName;
+
+  const suffixMatch = trimmedName.match(/^(.*\S)\s+(\d+)$/);
+  const baseName = suffixMatch?.[1].trim() || trimmedName;
+  let index = suffixMatch ? Math.max(Number(suffixMatch[2]) + 1, 2) : 2;
+  let nextName = `${baseName} ${index}`;
+
+  while (existingNames.has(nextName)) {
+    index += 1;
+    nextName = `${baseName} ${index}`;
+  }
+
+  return nextName;
+}
+
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -276,7 +308,7 @@ export async function saveCustomAssembly(assembly: CustomAssembly): Promise<void
 
 export async function listCustomAssemblies(): Promise<CustomAssembly[]> {
   const assemblies = await allFromStore<CustomAssembly>(ASSEMBLY_STORE);
-  return assemblies.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return assemblies.sort((a, b) => getCustomAssemblySortTime(b) - getCustomAssemblySortTime(a));
 }
 
 export async function deleteCustomAssembly(id: string): Promise<void> {

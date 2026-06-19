@@ -50,7 +50,7 @@ npm run build
 - Object selection, transform controls, duplicate, delete, lock, and visibility
 - Scene Objects Ctrl/Cmd-click multi-select with Group Selected and Ungroup actions
 - Linked object groups for translate movement, duplicate, delete, lock/hide, save/load, browser autosave, and JSON export/import
-- Browser-local Custom Assemblies saved from selected groups and reinserted from the Asset Library
+- Browser-local Custom Assemblies saved from selected groups with list metadata, hover details, and reinserted from the Asset Library
 - Selection modes for normal canvas picking, panel-only layer selection, and move-panel-selected-only workflows
 - Axis direction helper and X/Y/Z color-coded position inputs
 - Axis lock buttons for Free, X-only, Y-only, and Z-only movement
@@ -123,7 +123,7 @@ Grouping is linked object behavior for staging assemblies. It is not CAD boolean
 
 ### Custom Assemblies
 
-Select a group, then choose `Save Group as Custom Assembly` in the Properties panel to save it as a reusable browser-local assembly. The saved assembly appears under `Custom Assemblies` in the Asset Library. Click the assembly name to insert a fresh copy into the scene; the inserted objects and group receive new IDs, preserve the saved object payloads and materials, and select the inserted root group for movement.
+Select a group, then choose `Save Group as Custom Assembly` in the Properties panel to save it as a reusable browser-local assembly. The saved assembly appears under `Custom Assemblies` in the Asset Library with its object count and saved date. Hover an assembly row to see the full name and metadata, and drag the right edge of the desktop Add sidebar wider when names need more room. Duplicate assembly names are kept separate with a numeric suffix such as `Name 2` or `Name 3`. Click the assembly name to insert a fresh copy into the scene; the inserted objects and group receive new IDs, preserve the saved object payloads and materials, appear slightly offset from the current scene center, and select the inserted root group for movement.
 
 Custom assemblies are reusable browser assets, separate from project JSON backups. They stay in the current browser until deleted from the Custom Assemblies library. Deleting a saved library assembly does not remove copies already inserted into the scene. Once inserted, assembly objects and groups behave like normal scene content and save/load through browser projects and JSON export/import.
 
