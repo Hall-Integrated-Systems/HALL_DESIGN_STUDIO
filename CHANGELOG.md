@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.8.1
+
+- Added browser-local Custom Assemblies for saving a selected group as a reusable assembly.
+- Added Save Group as Custom Assembly in the Properties panel when a group is selected.
+- Added a Custom Assemblies section in the Asset Library with insert and delete actions.
+- Inserted custom assemblies clone objects and groups with new IDs, preserve materials and object payloads, and select the inserted root group.
+- Custom assemblies are stored separately from project JSON; once inserted, their objects and groups save/export/import as normal scene content.
+- Custom assemblies remain linked object assemblies, not CAD boolean merged geometry, and image/model-heavy assemblies can increase browser storage use.
+
 ## v2.8.0
 
 - Added core object grouping for linked selection, movement, duplication, lock/hide, save/load, browser autosave, and JSON export/import.

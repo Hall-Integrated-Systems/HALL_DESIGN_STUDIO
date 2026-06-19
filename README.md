@@ -50,6 +50,7 @@ npm run build
 - Object selection, transform controls, duplicate, delete, lock, and visibility
 - Scene Objects Ctrl/Cmd-click multi-select with Group Selected and Ungroup actions
 - Linked object groups for translate movement, duplicate, delete, lock/hide, save/load, browser autosave, and JSON export/import
+- Browser-local Custom Assemblies saved from selected groups and reinserted from the Asset Library
 - Selection modes for normal canvas picking, panel-only layer selection, and move-panel-selected-only workflows
 - Axis direction helper and X/Y/Z color-coded position inputs
 - Axis lock buttons for Free, X-only, Y-only, and Z-only movement
@@ -118,7 +119,15 @@ Group movement respects `Free`, `X only`, `Y only`, and `Z only` axis locks. Whe
 
 Duplicate on a selected group creates a new group with duplicated children and an offset that respects the active duplicate and snap settings. Ungroup removes only the group metadata and leaves child objects in their current world positions. Deleting a selected group deletes the group and its child objects. Group visibility hides members at render/export time without changing child object visibility, and group lock prevents canvas movement/selection while the group remains selectable from the Scene Objects panel.
 
-Grouping is linked object behavior for staging assemblies. It is not CAD boolean merge, mesh union, STL editing, slicing, or geometry cleanup. Persistent reusable custom assemblies and a custom assembly browser store are deferred.
+Grouping is linked object behavior for staging assemblies. It is not CAD boolean merge, mesh union, STL editing, slicing, or geometry cleanup.
+
+### Custom Assemblies
+
+Select a group, then choose `Save Group as Custom Assembly` in the Properties panel to save it as a reusable browser-local assembly. The saved assembly appears under `Custom Assemblies` in the Asset Library. Click the assembly name to insert a fresh copy into the scene; the inserted objects and group receive new IDs, preserve the saved object payloads and materials, and select the inserted root group for movement.
+
+Custom assemblies are reusable browser assets, separate from project JSON backups. They stay in the current browser until deleted from the Custom Assemblies library. Deleting a saved library assembly does not remove copies already inserted into the scene. Once inserted, assembly objects and groups behave like normal scene content and save/load through browser projects and JSON export/import.
+
+Custom assemblies are still linked object groups, not CAD boolean merged geometry. Assemblies that contain embedded image planes or GLB/GLTF model data can use noticeably more browser storage.
 
 On desktop, the Translate/Rotate/Scale and Free/X/Y/Z controls live in the fixed header control area rather than floating over the canvas. Standard desktop widths use a compact second header row, while wider layouts can keep the controls inline with the brand and top menus.
 
@@ -161,5 +170,6 @@ The app is built with Vite and deployed as static files through Azure Static Web
 - Prefer self-contained `.glb` models over external-file `.gltf` packages.
 - Large image planes and model data can increase browser storage, project JSON size, and export time.
 - Mounting helpers are visual planning markers only and do not cut geometry or validate hardware fit.
-- Groups are linked transform metadata, not merged geometry or reusable custom assembly definitions.
+- Groups and custom assemblies are linked transform metadata, not merged geometry.
+- Custom assemblies are browser-local and are not synced across devices or embedded into every project backup.
 - The production build currently emits an expected large Three.js bundle warning.

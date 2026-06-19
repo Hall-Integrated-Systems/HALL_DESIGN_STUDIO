@@ -785,7 +785,7 @@ export function TopBar({
           <section className="menu-section">
             <h2>Storage</h2>
             <p className="menu-note">
-              Large image planes and embedded models can make browser projects heavy. Use JSON export as the backup path for important work.
+              Large image planes, embedded models, and custom assemblies can make browser storage heavy. Use JSON export as the backup path for important projects.
             </p>
           </section>
           <section className="menu-section">
@@ -795,8 +795,8 @@ export function TopBar({
           <section className="menu-section">
             <h2>Known Limitations</h2>
             <p className="menu-note">
-              This is a product staging and mockup tool, not CAD. Groups are linked object transforms, not boolean merges or reusable custom assemblies.
-              Multi-file GLTF texture relinking, STL editing, slicing, advanced offline rendering, and cloud sync are intentionally out of scope.
+              This is a product staging and mockup tool, not CAD. Groups and custom assemblies are linked objects, not boolean merges.
+              Multi-file GLTF texture relinking, STL editing, slicing, advanced offline rendering, cloud sync, and cross-device assembly libraries are intentionally out of scope.
             </p>
           </section>
         </MenuGroup>

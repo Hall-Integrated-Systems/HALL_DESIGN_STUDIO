@@ -4,6 +4,7 @@ import type {
   AnnotationKind,
   BackgroundMode,
   CameraPreset,
+  CustomAssembly,
   FrameTarget,
   MountingHelperKind,
   PrimitiveKind,
@@ -74,6 +75,7 @@ interface StudioState {
   addImageDecalAsset: (assetId: string) => void;
   addImportedAsset: (assetId: string) => void;
   addImportedImage: (assetId: string) => void;
+  addCustomAssemblyToScene: (assembly: CustomAssembly) => void;
   applyProjectTemplate: (templateId: ProjectTemplateId) => void;
   clearScene: () => void;
   markSaved: () => void;
@@ -276,6 +278,44 @@ const cloneObject = (object: StudioObject, name: string, settings: StudioSetting
   mountingHelper: object.mountingHelper ? { ...object.mountingHelper, clearanceSize: [...object.mountingHelper.clearanceSize] } : undefined,
   parts: object.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
 });
+
+const cloneObjectAtPosition = (object: StudioObject, id: string, name: string, position: Vec3): StudioObject => ({
+  ...object,
+  id,
+  name,
+  position,
+  material: { ...object.material },
+  imagePlane: object.imagePlane ? { ...object.imagePlane } : undefined,
+  annotation: object.annotation ? { ...object.annotation, start: [...object.annotation.start], end: [...object.annotation.end] } : undefined,
+  mountingHelper: object.mountingHelper ? { ...object.mountingHelper, clearanceSize: [...object.mountingHelper.clearanceSize] } : undefined,
+  parts: object.parts?.map((part) => ({
+    ...part,
+    position: [...part.position],
+    rotation: [...part.rotation],
+    scale: [...part.scale],
+    material: part.material ? { ...part.material } : undefined,
+  })),
+});
+
+const getAssemblyInsertOrigin = (settings: StudioSettings): Vec3 => {
+  const offset = settings.duplicateOffset;
+  return snapVector([offset, 0, offset], settings);
+};
+
+const getUniqueName = (baseName: string, existingNames: Set<string>) => {
+  const trimmed = baseName.trim() || 'Assembly';
+  if (!existingNames.has(trimmed)) return trimmed;
+
+  let index = 2;
+  let name = `${trimmed} ${index}`;
+
+  while (existingNames.has(name)) {
+    index += 1;
+    name = `${trimmed} ${index}`;
+  }
+
+  return name;
+};
 
 const sanitizeGroups = (objects: StudioObject[], groups: StudioGroup[] | undefined): StudioGroup[] => {
   if (!Array.isArray(groups)) return [];
@@ -599,6 +639,53 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     set((state) => ({ objects: [...state.objects, object], ...getSelectionPatch([object.id]), isDirty: true }));
   },
+
+  addCustomAssemblyToScene: (assembly) =>
+    set((state) => {
+      if (assembly.objects.length === 0 || assembly.groups.length === 0) return state;
+
+      const objectIdMap = new Map<string, string>();
+      const groupIdMap = new Map<string, string>();
+      const existingObjectNames = new Set(state.objects.map((object) => object.name));
+      const existingGroupNames = new Set(state.groups.map((group) => group.name));
+      const insertOrigin = getAssemblyInsertOrigin(state.settings);
+
+      const nextObjects = assembly.objects.map((object) => {
+        const id = makeId();
+        objectIdMap.set(object.id, id);
+        const name = getUniqueName(object.name, existingObjectNames);
+        existingObjectNames.add(name);
+        return cloneObjectAtPosition(object, id, name, [
+          Number((object.position[0] + insertOrigin[0]).toFixed(4)),
+          Number((object.position[1] + insertOrigin[1]).toFixed(4)),
+          Number((object.position[2] + insertOrigin[2]).toFixed(4)),
+        ]);
+      });
+
+      const nextGroups = assembly.groups
+        .map((group) => {
+          const id = makeId();
+          groupIdMap.set(group.id, id);
+          const name = getUniqueName(group.id === assembly.rootGroupId ? assembly.name : group.name, existingGroupNames);
+          existingGroupNames.add(name);
+          return {
+            ...group,
+            id,
+            name,
+            objectIds: group.objectIds.map((objectId) => objectIdMap.get(objectId)).filter((objectId): objectId is string => Boolean(objectId)),
+          };
+        })
+        .filter((group) => group.objectIds.length > 0);
+
+      const selectedGroupId = groupIdMap.get(assembly.rootGroupId) ?? nextGroups[0]?.id ?? null;
+
+      return {
+        objects: [...state.objects, ...nextObjects],
+        groups: [...state.groups, ...nextGroups],
+        ...getSelectionPatch([], selectedGroupId),
+        isDirty: true,
+      };
+    }),
 
   applyProjectTemplate: (templateId) => {
     const template = getProjectTemplate(templateId);

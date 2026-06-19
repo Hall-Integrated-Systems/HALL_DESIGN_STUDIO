@@ -2,10 +2,12 @@ import type { ChangeEvent, MouseEvent } from 'react';
 import { useStudioStore } from '../state/studioStore';
 import type { AlignmentAction, ProjectSource, SelectionMode, StudioGroup, StudioObject, Vec3 } from '../types/studioTypes';
 import { brandColorPresets, materialPresets } from '../config/presets';
+import { CUSTOM_ASSEMBLIES_CHANGED_EVENT, createCustomAssemblyRecord, saveCustomAssembly } from '../utils/localProjectStorage';
 
 type VectorField = 'position' | 'rotation' | 'scale';
 
 const axes = ['X', 'Y', 'Z'] as const;
+const LARGE_ASSEMBLY_WARNING_BYTES = 2 * 1024 * 1024;
 
 function toDegrees(radians: number) {
   return Number(((radians * 180) / Math.PI).toFixed(2));
@@ -44,6 +46,7 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
   const duplicateSelected = useStudioStore((state) => state.duplicateSelected);
   const groupSelected = useStudioStore((state) => state.groupSelected);
   const ungroupSelected = useStudioStore((state) => state.ungroupSelected);
+  const pushToast = useStudioStore((state) => state.pushToast);
 
   const projectPanel = (
     <ProjectPanel
@@ -61,6 +64,25 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
     }
 
     selectObject(id);
+  };
+  const handleSaveGroupAsAssembly = async (group: StudioGroup) => {
+    const name = window.prompt('Custom assembly name', group.name)?.trim();
+    if (!name) return;
+
+    try {
+      const assembly = createCustomAssemblyRecord({ name, group, objects, groups });
+      const assemblyBytes = new Blob([JSON.stringify(assembly)]).size;
+
+      if (assemblyBytes > LARGE_ASSEMBLY_WARNING_BYTES) {
+        pushToast('This custom assembly includes embedded model or image data and may use more browser storage.', 'warning');
+      }
+
+      await saveCustomAssembly(assembly);
+      window.dispatchEvent(new Event(CUSTOM_ASSEMBLIES_CHANGED_EVENT));
+      pushToast(`Saved custom assembly "${assembly.name}".`, 'success');
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Custom assembly could not be saved.', 'error');
+    }
   };
 
   if (selectedGroup) {
@@ -85,6 +107,11 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
           onUngroupSelected={ungroupSelected}
         />
         <GroupPanel group={selectedGroup} onUpdate={updateGroup} />
+        <div className="object-actions single-row-actions">
+          <button type="button" onClick={() => handleSaveGroupAsAssembly(selectedGroup)}>
+            Save Group as Custom Assembly
+          </button>
+        </div>
         <div className="object-actions">
           <button type="button" onClick={duplicateSelected}>
             Duplicate

@@ -1,12 +1,15 @@
-import type { BackgroundMode, CameraPreset, ScreenshotSize, StudioProject } from '../types/studioTypes';
+import type { BackgroundMode, CameraPreset, CustomAssembly, ScreenshotSize, StudioGroup, StudioObject, StudioProject, Vec3 } from '../types/studioTypes';
+import { APP_VERSION } from '../config/presets';
 
 const DB_NAME = 'hall-product-studio';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const PROJECT_STORE = 'projects';
 const DRAFT_STORE = 'drafts';
 const PRESET_STORE = 'renderPresets';
+const ASSEMBLY_STORE = 'customAssemblies';
 const AUTOSAVE_DRAFT_ID = 'autosave';
 const AUTOSAVE_FLAG_KEY = 'hall-product-studio.autosaveDraft';
+export const CUSTOM_ASSEMBLIES_CHANGED_EVENT = 'hall-product-studio.customAssembliesChanged';
 
 export interface BrowserProjectRecord {
   id: string;
@@ -43,6 +46,39 @@ export interface CustomRenderPreset {
 
 const createId = () => crypto.randomUUID();
 
+const cloneAssemblyObject = (object: StudioObject, origin: Vec3): StudioObject => ({
+  ...object,
+  position: [
+    Number((object.position[0] - origin[0]).toFixed(4)),
+    Number((object.position[1] - origin[1]).toFixed(4)),
+    Number((object.position[2] - origin[2]).toFixed(4)),
+  ],
+  material: { ...object.material },
+  imagePlane: object.imagePlane ? { ...object.imagePlane } : undefined,
+  annotation: object.annotation ? { ...object.annotation, start: [...object.annotation.start], end: [...object.annotation.end] } : undefined,
+  mountingHelper: object.mountingHelper ? { ...object.mountingHelper, clearanceSize: [...object.mountingHelper.clearanceSize] } : undefined,
+  parts: object.parts?.map((part) => ({
+    ...part,
+    position: [...part.position],
+    rotation: [...part.rotation],
+    scale: [...part.scale],
+    material: part.material ? { ...part.material } : undefined,
+  })),
+});
+
+const getAssemblyOrigin = (objects: StudioObject[]): Vec3 => {
+  if (objects.length === 0) return [0, 0, 0];
+  const total = objects.reduce<Vec3>(
+    (sum, object) => [sum[0] + object.position[0], sum[1] + object.position[1], sum[2] + object.position[2]],
+    [0, 0, 0],
+  );
+  return [
+    Number((total[0] / objects.length).toFixed(4)),
+    0,
+    Number((total[2] / objects.length).toFixed(4)),
+  ];
+};
+
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -62,6 +98,11 @@ function openDatabase(): Promise<IDBDatabase> {
       if (!database.objectStoreNames.contains(PRESET_STORE)) {
         const presetStore = database.createObjectStore(PRESET_STORE, { keyPath: 'id' });
         presetStore.createIndex('createdAt', 'createdAt');
+      }
+
+      if (!database.objectStoreNames.contains(ASSEMBLY_STORE)) {
+        const assemblyStore = database.createObjectStore(ASSEMBLY_STORE, { keyPath: 'id' });
+        assemblyStore.createIndex('updatedAt', 'updatedAt');
       }
     };
 
@@ -186,4 +227,58 @@ export async function listCustomRenderPresets(): Promise<CustomRenderPreset[]> {
 
 export async function deleteCustomRenderPreset(id: string): Promise<void> {
   await withStore<undefined>(PRESET_STORE, 'readwrite', (store) => store.delete(id) as IDBRequest<undefined>);
+}
+
+export function createCustomAssemblyRecord({
+  name,
+  group,
+  objects,
+  groups,
+  id = createId(),
+  existingRecord,
+}: {
+  name: string;
+  group: StudioGroup;
+  objects: StudioObject[];
+  groups: StudioGroup[];
+  id?: string;
+  existingRecord?: CustomAssembly;
+}): CustomAssembly {
+  const childObjects = group.objectIds
+    .map((objectId) => objects.find((object) => object.id === objectId))
+    .filter((object): object is StudioObject => Boolean(object));
+  const origin = getAssemblyOrigin(childObjects);
+  const selectedObjectIds = new Set(group.objectIds);
+  const assemblyObjects = childObjects.map((object) => cloneAssemblyObject(object, origin));
+  const assemblyGroups = groups
+    .filter((candidate) => candidate.id === group.id || candidate.objectIds.some((objectId) => selectedObjectIds.has(objectId)))
+    .map((candidate) => ({ ...candidate, objectIds: candidate.objectIds.filter((objectId) => selectedObjectIds.has(objectId)) }))
+    .filter((candidate) => candidate.objectIds.length > 0);
+  const now = new Date().toISOString();
+
+  return {
+    id,
+    name: name.trim() || group.name || 'Custom Assembly',
+    createdAt: existingRecord?.createdAt ?? now,
+    updatedAt: now,
+    appVersion: APP_VERSION,
+    objects: assemblyObjects,
+    groups: assemblyGroups,
+    rootGroupId: group.id,
+    origin,
+    previewColor: childObjects[0]?.material.color,
+  };
+}
+
+export async function saveCustomAssembly(assembly: CustomAssembly): Promise<void> {
+  await withStore<IDBValidKey>(ASSEMBLY_STORE, 'readwrite', (store) => store.put(assembly));
+}
+
+export async function listCustomAssemblies(): Promise<CustomAssembly[]> {
+  const assemblies = await allFromStore<CustomAssembly>(ASSEMBLY_STORE);
+  return assemblies.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export async function deleteCustomAssembly(id: string): Promise<void> {
+  await withStore<undefined>(ASSEMBLY_STORE, 'readwrite', (store) => store.delete(id) as IDBRequest<undefined>);
 }

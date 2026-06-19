@@ -103,6 +103,19 @@ export interface StudioGroup {
   visible: boolean;
 }
 
+export interface CustomAssembly {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  appVersion?: string;
+  objects: StudioObject[];
+  groups: StudioGroup[];
+  rootGroupId: string;
+  origin: Vec3;
+  previewColor?: string;
+}
+
 export interface AnnotationData {
   kind: AnnotationKind;
   text: string;

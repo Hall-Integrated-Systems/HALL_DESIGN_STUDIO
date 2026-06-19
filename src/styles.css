@@ -865,7 +865,27 @@ button.active,
 }
 
 .single-row-actions {
+  grid-template-columns: 1fr;
   margin-top: 0;
+}
+
+.custom-assembly-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.custom-assembly-row button:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  text-align: left;
+}
+
+.custom-assembly-row .danger-button {
+  padding: 0 8px;
+  font-size: 12px;
 }
 
 .danger-button {

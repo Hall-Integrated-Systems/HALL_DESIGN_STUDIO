@@ -1,9 +1,10 @@
-import { ChangeEvent, useRef } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useStudioStore } from '../state/studioStore';
-import type { AnnotationKind, PrimitiveKind } from '../types/studioTypes';
+import type { AnnotationKind, CustomAssembly, PrimitiveKind } from '../types/studioTypes';
 import { assetCategories, builtInAssets, imageDecalAssets } from '../config/assets';
 import { mountingHelpers } from '../config/mountingHelpers';
+import { CUSTOM_ASSEMBLIES_CHANGED_EVENT, deleteCustomAssembly, listCustomAssemblies } from '../utils/localProjectStorage';
 
 const primitiveButtons: Array<{ kind: PrimitiveKind; label: string }> = [
   { kind: 'cube', label: 'Cube' },
@@ -27,6 +28,7 @@ const maxImagePixels = 24_000_000;
 export function LeftToolbar({ className = '' }: { className?: string }) {
   const importInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const [customAssemblies, setCustomAssemblies] = useState<CustomAssembly[]>([]);
   const addPrimitive = useStudioStore((state) => state.addPrimitive);
   const addAnnotation = useStudioStore((state) => state.addAnnotation);
   const addMountingHelper = useStudioStore((state) => state.addMountingHelper);
@@ -36,9 +38,27 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
   const addImageDecalAsset = useStudioStore((state) => state.addImageDecalAsset);
   const addImportedAsset = useStudioStore((state) => state.addImportedAsset);
   const addImportedImage = useStudioStore((state) => state.addImportedImage);
+  const addCustomAssemblyToScene = useStudioStore((state) => state.addCustomAssemblyToScene);
   const importedAssetHistory = useStudioStore((state) => state.importedAssetHistory);
   const importedImageHistory = useStudioStore((state) => state.importedImageHistory);
   const pushToast = useStudioStore((state) => state.pushToast);
+
+  const refreshCustomAssemblies = async () => {
+    try {
+      setCustomAssemblies(await listCustomAssemblies());
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Custom assemblies could not be loaded.', 'warning');
+    }
+  };
+
+  useEffect(() => {
+    refreshCustomAssemblies();
+    const handleCustomAssembliesChanged = () => {
+      refreshCustomAssemblies();
+    };
+    window.addEventListener(CUSTOM_ASSEMBLIES_CHANGED_EVENT, handleCustomAssembliesChanged);
+    return () => window.removeEventListener(CUSTOM_ASSEMBLIES_CHANGED_EVENT, handleCustomAssembliesChanged);
+  }, []);
 
   const handleAddPrimitive = (kind: PrimitiveKind, label: string) => {
     addPrimitive(kind);
@@ -94,6 +114,24 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
     }
   };
 
+  const handleAddCustomAssembly = (assembly: CustomAssembly) => {
+    addCustomAssemblyToScene(assembly);
+    pushToast(`${assembly.name} added to scene.`, 'success');
+  };
+
+  const handleDeleteCustomAssembly = async (assembly: CustomAssembly) => {
+    if (!window.confirm(`Delete custom assembly "${assembly.name}" from this browser? Scene objects already inserted will stay in the scene.`)) return;
+
+    try {
+      await deleteCustomAssembly(assembly.id);
+      await refreshCustomAssemblies();
+      window.dispatchEvent(new Event(CUSTOM_ASSEMBLIES_CHANGED_EVENT));
+      pushToast(`Deleted custom assembly "${assembly.name}".`, 'info');
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Custom assembly could not be deleted.', 'error');
+    }
+  };
+
   return (
     <aside className={`left-toolbar ${className}`.trim()} aria-label="Add objects">
       <section className="toolbar-section simple-shapes-section">
@@ -134,6 +172,27 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
               </details>
             );
           })}
+      </section>
+
+      <section className="toolbar-section">
+        <h2>Custom Assemblies</h2>
+        {customAssemblies.length === 0 ? (
+          <p className="list-empty">No custom assemblies saved in this browser.</p>
+        ) : (
+          <div className="toolbar-group">
+            {customAssemblies.map((assembly) => (
+              <div key={assembly.id} className="custom-assembly-row">
+                <button type="button" onClick={() => handleAddCustomAssembly(assembly)}>
+                  <span className="swatch" style={{ backgroundColor: assembly.previewColor ?? '#8ba4bd' }} />
+                  {assembly.name}
+                </button>
+                <button type="button" className="danger-button" onClick={() => handleDeleteCustomAssembly(assembly)} aria-label={`Delete ${assembly.name}`}>
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="toolbar-section">
