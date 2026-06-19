@@ -12,6 +12,7 @@ import type {
   ProjectTemplateId,
   ScreenshotSize,
   SceneTemplate,
+  StudioGroup,
   StudioObject,
   StudioProject,
   StudioSettings,
@@ -43,6 +44,7 @@ interface ImportedImageHistoryItem {
 
 interface StudioState {
   objects: StudioObject[];
+  groups: StudioGroup[];
   importedAssetHistory: ImportedAssetHistoryItem[];
   importedImageHistory: ImportedImageHistoryItem[];
   projectTitle: string;
@@ -52,6 +54,8 @@ interface StudioState {
   projectSource: ProjectSource;
   referenceObjectId: string | null;
   selectedObjectId: string | null;
+  selectedObjectIds: string[];
+  selectedGroupId: string | null;
   transformMode: TransformMode;
   cameraPreset: CameraPreset;
   cameraDistance: number;
@@ -76,9 +80,17 @@ interface StudioState {
   setActiveBrowserProjectId: (id: string | null) => void;
   setReferenceObject: (id: string | null) => void;
   selectObject: (id: string | null) => void;
+  toggleObjectSelection: (id: string) => void;
+  selectOnlyObject: (id: string | null) => void;
+  selectGroup: (id: string | null) => void;
+  clearSelection: () => void;
+  groupSelected: () => void;
+  ungroupSelected: () => void;
+  updateGroup: (id: string, patch: Partial<StudioGroup>) => void;
   alignSelectedObject: (action: AlignmentAction) => void;
   updateObject: (id: string, patch: Partial<StudioObject>) => void;
   updateObjectTransform: (id: string, transform: Partial<Pick<StudioObject, 'position' | 'rotation' | 'scale'>>) => void;
+  updateGroupTransform: (id: string, startCenter: Vec3, nextCenter: Vec3) => void;
   updateObjectMaterial: (id: string, material: Partial<StudioObject['material']>) => void;
   deleteSelected: () => void;
   duplicateSelected: () => void;
@@ -253,8 +265,88 @@ const withObjectDefaults = (object: StudioObject): StudioObject => ({
   parts: object.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
 });
 
+const cloneObject = (object: StudioObject, name: string, settings: StudioSettings): StudioObject => ({
+  ...object,
+  id: makeId(),
+  name,
+  position: getDuplicatePosition(object.position, settings),
+  material: { ...object.material },
+  imagePlane: object.imagePlane ? { ...object.imagePlane } : undefined,
+  annotation: object.annotation ? { ...object.annotation } : undefined,
+  mountingHelper: object.mountingHelper ? { ...object.mountingHelper, clearanceSize: [...object.mountingHelper.clearanceSize] } : undefined,
+  parts: object.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
+});
+
+const sanitizeGroups = (objects: StudioObject[], groups: StudioGroup[] | undefined): StudioGroup[] => {
+  if (!Array.isArray(groups)) return [];
+
+  const objectIds = new Set(objects.map((object) => object.id));
+  const assignedObjectIds = new Set<string>();
+  const usedGroupIds = new Set<string>();
+
+  return groups.reduce<StudioGroup[]>((sanitized, group, index) => {
+    if (!group || !Array.isArray(group.objectIds)) return sanitized;
+
+    const validObjectIds = group.objectIds.filter((objectId) => {
+      if (!objectIds.has(objectId) || assignedObjectIds.has(objectId)) return false;
+      assignedObjectIds.add(objectId);
+      return true;
+    });
+
+    if (validObjectIds.length === 0) return sanitized;
+
+    const fallbackId = makeId();
+    const id = group.id && !usedGroupIds.has(group.id) ? group.id : fallbackId;
+    usedGroupIds.add(id);
+
+    sanitized.push({
+      id,
+      name: group.name?.trim() || `Group ${index + 1}`,
+      objectIds: validObjectIds,
+      locked: group.locked ?? false,
+      visible: group.visible ?? true,
+    });
+
+    return sanitized;
+  }, []);
+};
+
+const removeObjectIdsFromGroups = (groups: StudioGroup[], objectIds: Set<string>): StudioGroup[] =>
+  groups
+    .map((group) => ({ ...group, objectIds: group.objectIds.filter((objectId) => !objectIds.has(objectId)) }))
+    .filter((group) => group.objectIds.length > 0);
+
+const getNextGroupName = (groups: StudioGroup[]) => {
+  const existingNames = new Set(groups.map((group) => group.name));
+  let index = groups.length + 1;
+  let name = `Group ${index}`;
+
+  while (existingNames.has(name)) {
+    index += 1;
+    name = `Group ${index}`;
+  }
+
+  return name;
+};
+
+const getConstrainedGroupDelta = (settings: StudioSettings, startCenter: Vec3, nextCenter: Vec3): Vec3 => {
+  const constrained = applyPositionRules(startCenter, nextCenter, settings);
+  return [
+    Number((constrained[0] - startCenter[0]).toFixed(4)),
+    Number((constrained[1] - startCenter[1]).toFixed(4)),
+    Number((constrained[2] - startCenter[2]).toFixed(4)),
+  ];
+};
+
+const getSelectionPatch = (objectIds: string[], selectedGroupId: string | null = null) => ({
+  selectedObjectIds: objectIds,
+  selectedObjectId: objectIds.length === 1 && !selectedGroupId ? objectIds[0] : null,
+  selectedGroupId,
+});
+
 export const useStudioStore = create<StudioState>((set, get) => ({
   objects: [],
+  groups: [],
   importedAssetHistory: [],
   importedImageHistory: [],
   projectTitle: 'Untitled Product Render',
@@ -264,6 +356,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   projectSource: 'new',
   referenceObjectId: null,
   selectedObjectId: null,
+  selectedObjectIds: [],
+  selectedGroupId: null,
   transformMode: 'translate',
   cameraPreset: 'isometric',
   cameraDistance: 6,
@@ -287,7 +381,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       locked: false,
       visible: true,
     };
-    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
+    set((state) => ({ objects: [...state.objects, object], ...getSelectionPatch([object.id]), isDirty: true }));
   },
 
   addModel: (fileName, modelDataUrl) => {
@@ -310,7 +404,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       objects: [...state.objects, object],
       importedAssetHistory: [...state.importedAssetHistory, historyItem],
-      selectedObjectId: object.id,
+      ...getSelectionPatch([object.id]),
       isDirty: true,
     }));
   },
@@ -346,7 +440,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       objects: [...state.objects, object],
       importedImageHistory: [...state.importedImageHistory, historyItem],
-      selectedObjectId: object.id,
+      ...getSelectionPatch([object.id]),
       isDirty: true,
     }));
   },
@@ -380,7 +474,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       visible: true,
     };
 
-    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
+    set((state) => ({ objects: [...state.objects, object], ...getSelectionPatch([object.id]), isDirty: true }));
   },
 
   addMountingHelper: (kind) => {
@@ -410,14 +504,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       visible: true,
     };
 
-    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
+    set((state) => ({ objects: [...state.objects, object], ...getSelectionPatch([object.id]), isDirty: true }));
   },
 
   addBuiltInAsset: (assetId) => {
     const object = createBuiltInAssetObject(assetId, get().objects);
     if (!object) return;
 
-    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
+    set((state) => ({ objects: [...state.objects, object], ...getSelectionPatch([object.id]), isDirty: true }));
   },
 
   addImageDecalAsset: (assetId) => {
@@ -447,7 +541,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       visible: true,
     };
 
-    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
+    set((state) => ({ objects: [...state.objects, object], ...getSelectionPatch([object.id]), isDirty: true }));
   },
 
   addImportedAsset: (assetId) => {
@@ -470,7 +564,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       fileName: asset.fileName,
     };
 
-    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
+    set((state) => ({ objects: [...state.objects, object], ...getSelectionPatch([object.id]), isDirty: true }));
   },
 
   addImportedImage: (assetId) => {
@@ -503,7 +597,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       fileName: asset.fileName,
     };
 
-    set((state) => ({ objects: [...state.objects, object], selectedObjectId: object.id, isDirty: true }));
+    set((state) => ({ objects: [...state.objects, object], ...getSelectionPatch([object.id]), isDirty: true }));
   },
 
   applyProjectTemplate: (templateId) => {
@@ -517,9 +611,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
     set({
       objects: starterObjects,
+      groups: [],
       projectTitle: template.title,
       projectNotes: template.notes,
-      selectedObjectId: starterObjects[0]?.id ?? null,
+      ...getSelectionPatch(starterObjects[0] ? [starterObjects[0].id] : []),
       cameraPreset: template.cameraPreset,
       cameraDistance: template.cameraDistance,
       cameraResetToken: get().cameraResetToken + 1,
@@ -535,7 +630,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   clearScene: () =>
     set((state) => ({
       objects: [],
-      selectedObjectId: null,
+      groups: [],
+      ...getSelectionPatch([]),
       isDirty: true,
       activeBrowserProjectId: null,
       projectSource: 'new',
@@ -547,7 +643,73 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setActiveBrowserProjectId: (id) => set({ activeBrowserProjectId: id, projectSource: id ? 'browser' : 'new' }),
   setReferenceObject: (id) => set({ referenceObjectId: id }),
 
-  selectObject: (id) => set({ selectedObjectId: id }),
+  selectObject: (id) => set(getSelectionPatch(id ? [id] : [])),
+  selectOnlyObject: (id) => set(getSelectionPatch(id ? [id] : [])),
+  toggleObjectSelection: (id) =>
+    set((state) => {
+      if (!state.objects.some((object) => object.id === id)) return state;
+      const selectedIds = new Set(state.selectedObjectIds);
+
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+      } else {
+        selectedIds.add(id);
+      }
+
+      return getSelectionPatch([...selectedIds]);
+    }),
+  selectGroup: (id) =>
+    set((state) => {
+      if (!id) return getSelectionPatch([]);
+      const group = state.groups.find((candidate) => candidate.id === id);
+      return group ? getSelectionPatch([], group.id) : state;
+    }),
+  clearSelection: () => set(getSelectionPatch([])),
+  groupSelected: () =>
+    set((state) => {
+      const selectedIds = state.selectedObjectIds.filter((objectId) => state.objects.some((object) => object.id === objectId));
+      if (selectedIds.length < 2) return state;
+
+      const selectedIdSet = new Set(selectedIds);
+      const groupsWithoutSelectedObjects = removeObjectIdsFromGroups(state.groups, selectedIdSet);
+      const group: StudioGroup = {
+        id: makeId(),
+        name: getNextGroupName(groupsWithoutSelectedObjects),
+        objectIds: selectedIds,
+        locked: false,
+        visible: true,
+      };
+
+      return {
+        groups: [...groupsWithoutSelectedObjects, group],
+        ...getSelectionPatch([], group.id),
+        isDirty: true,
+      };
+    }),
+  ungroupSelected: () =>
+    set((state) => {
+      if (!state.selectedGroupId) return state;
+      const group = state.groups.find((candidate) => candidate.id === state.selectedGroupId);
+      return {
+        groups: state.groups.filter((candidate) => candidate.id !== state.selectedGroupId),
+        ...getSelectionPatch(group?.objectIds ?? []),
+        isDirty: true,
+      };
+    }),
+  updateGroup: (id, patch) =>
+    set((state) => ({
+      groups: state.groups.map((group) =>
+        group.id === id
+          ? {
+              ...group,
+              ...patch,
+              name: patch.name ?? group.name,
+              objectIds: patch.objectIds ?? group.objectIds,
+            }
+          : group,
+      ),
+      isDirty: true,
+    })),
 
   alignSelectedObject: (action) =>
     set((state) => {
@@ -592,6 +754,32 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       isDirty: true,
     })),
 
+  updateGroupTransform: (id, startCenter, nextCenter) =>
+    set((state) => {
+      const group = state.groups.find((candidate) => candidate.id === id);
+      if (!group || group.locked) return state;
+
+      const delta = getConstrainedGroupDelta(state.settings, startCenter, nextCenter);
+      if (delta.every((value) => Math.abs(value) <= 0.0001)) return state;
+
+      const groupObjectIds = new Set(group.objectIds);
+      return {
+        objects: state.objects.map((object) =>
+          groupObjectIds.has(object.id)
+            ? {
+                ...object,
+                position: [
+                  Number((object.position[0] + delta[0]).toFixed(4)),
+                  Number((object.position[1] + delta[1]).toFixed(4)),
+                  Number((object.position[2] + delta[2]).toFixed(4)),
+                ],
+              }
+            : object,
+        ),
+        isDirty: true,
+      };
+    }),
+
   updateObjectMaterial: (id, material) =>
     set((state) => ({
       objects: state.objects.map((object) =>
@@ -601,30 +789,71 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     })),
 
   deleteSelected: () => {
-    const selectedObjectId = get().selectedObjectId;
-    if (!selectedObjectId) return;
-    set((state) => ({
-      objects: state.objects.filter((object) => object.id !== selectedObjectId),
-      selectedObjectId: null,
-      isDirty: true,
-    }));
+    const { selectedGroupId, selectedObjectIds } = get();
+    if (!selectedGroupId && selectedObjectIds.length === 0) return;
+
+    set((state) => {
+      const selectedGroup = selectedGroupId ? state.groups.find((group) => group.id === selectedGroupId) : null;
+      const deletedObjectIds = new Set(selectedGroup ? selectedGroup.objectIds : selectedObjectIds);
+
+      return {
+        objects: state.objects.filter((object) => !deletedObjectIds.has(object.id)),
+        groups: selectedGroup
+          ? state.groups.filter((group) => group.id !== selectedGroup.id)
+          : removeObjectIdsFromGroups(state.groups, deletedObjectIds),
+        ...getSelectionPatch([]),
+        isDirty: true,
+      };
+    });
   },
 
   duplicateSelected: () => {
-    const selected = get().objects.find((object) => object.id === get().selectedObjectId);
-    if (!selected) return;
-    const duplicate: StudioObject = {
-      ...selected,
-      id: makeId(),
-      name: `${selected.name} Copy`,
-      position: getDuplicatePosition(selected.position, get().settings),
-      material: { ...selected.material },
-      imagePlane: selected.imagePlane ? { ...selected.imagePlane } : undefined,
-      annotation: selected.annotation ? { ...selected.annotation } : undefined,
-      mountingHelper: selected.mountingHelper ? { ...selected.mountingHelper, clearanceSize: [...selected.mountingHelper.clearanceSize] } : undefined,
-      parts: selected.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
-    };
-    set((state) => ({ objects: [...state.objects, duplicate], selectedObjectId: duplicate.id, isDirty: true }));
+    set((state) => {
+      if (state.selectedGroupId) {
+        const selectedGroup = state.groups.find((group) => group.id === state.selectedGroupId);
+        if (!selectedGroup) return state;
+
+        const childObjects = selectedGroup.objectIds
+          .map((objectId) => state.objects.find((object) => object.id === objectId))
+          .filter((object): object is StudioObject => Boolean(object));
+        if (childObjects.length === 0) return state;
+
+        const idMap = new Map<string, string>();
+        const duplicates = childObjects.map((object) => {
+          const duplicate = cloneObject(object, `${object.name} Copy`, state.settings);
+          idMap.set(object.id, duplicate.id);
+          return duplicate;
+        });
+        const group: StudioGroup = {
+          ...selectedGroup,
+          id: makeId(),
+          name: `${selectedGroup.name} Copy`,
+          objectIds: selectedGroup.objectIds.map((objectId) => idMap.get(objectId)).filter((objectId): objectId is string => Boolean(objectId)),
+          locked: false,
+        };
+
+        return {
+          objects: [...state.objects, ...duplicates],
+          groups: [...state.groups, group],
+          ...getSelectionPatch([], group.id),
+          isDirty: true,
+        };
+      }
+
+      const selectedIds = state.selectedObjectIds.length > 0 ? state.selectedObjectIds : state.selectedObjectId ? [state.selectedObjectId] : [];
+      const selectedObjects = selectedIds
+        .map((objectId) => state.objects.find((object) => object.id === objectId))
+        .filter((object): object is StudioObject => Boolean(object));
+      if (selectedObjects.length === 0) return state;
+
+      const duplicates = selectedObjects.map((object) => cloneObject(object, `${object.name} Copy`, state.settings));
+
+      return {
+        objects: [...state.objects, ...duplicates],
+        ...getSelectionPatch(duplicates.map((object) => object.id)),
+        isDirty: true,
+      };
+    });
   },
 
   setTransformMode: (mode) => set({ transformMode: mode }),
@@ -659,7 +888,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   applyProductRenderPreset: (preset) =>
     set((state) => {
       const next = productRenderPresets[preset];
-      const frameTarget = next.frameTarget === 'selected' && !state.selectedObjectId ? 'all' : next.frameTarget;
+      const hasSelection = Boolean(state.selectedObjectId || state.selectedGroupId || state.selectedObjectIds.length > 0);
+      const frameTarget = next.frameTarget === 'selected' && !hasSelection ? 'all' : next.frameTarget;
 
       return {
         cameraPreset: next.cameraPreset,
@@ -674,18 +904,22 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({ settings: { ...state.settings, exportFileName: fileName, exportFileNameEdited: true }, isDirty: true })),
   updateProjectInfo: (info) => set((state) => ({ ...state, ...info, isDirty: true })),
   loadProject: (project, browserProjectId = null, source = browserProjectId ? 'browser' : 'json') =>
-    set({
-      objects: project.objects.map(withObjectDefaults),
-      settings: { ...DEFAULT_SETTINGS, ...project.settings },
-      projectTitle: project.title || 'Untitled Product Render',
-      projectNotes: project.notes || '',
-      cameraPreset: project.cameraPreset ?? 'isometric',
-      cameraDistance: project.cameraDistance ?? 6,
-      cameraResetToken: get().cameraResetToken + 1,
-      selectedObjectId: null,
-      isDirty: false,
-      activeBrowserProjectId: browserProjectId,
-      projectSource: source,
-      referenceObjectId: null,
+    set(() => {
+      const objects = project.objects.map(withObjectDefaults);
+      return {
+        objects,
+        groups: sanitizeGroups(objects, project.groups),
+        settings: { ...DEFAULT_SETTINGS, ...project.settings },
+        projectTitle: project.title || 'Untitled Product Render',
+        projectNotes: project.notes || '',
+        cameraPreset: project.cameraPreset ?? 'isometric',
+        cameraDistance: project.cameraDistance ?? 6,
+        cameraResetToken: get().cameraResetToken + 1,
+        ...getSelectionPatch([]),
+        isDirty: false,
+        activeBrowserProjectId: browserProjectId,
+        projectSource: source,
+        referenceObjectId: null,
+      };
     }),
 }));

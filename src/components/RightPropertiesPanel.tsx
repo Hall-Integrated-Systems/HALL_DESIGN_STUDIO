@@ -1,6 +1,6 @@
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, MouseEvent } from 'react';
 import { useStudioStore } from '../state/studioStore';
-import type { AlignmentAction, ProjectSource, SelectionMode, StudioObject, Vec3 } from '../types/studioTypes';
+import type { AlignmentAction, ProjectSource, SelectionMode, StudioGroup, StudioObject, Vec3 } from '../types/studioTypes';
 import { brandColorPresets, materialPresets } from '../config/presets';
 
 type VectorField = 'position' | 'rotation' | 'scale';
@@ -17,24 +17,33 @@ function toRadians(degrees: number) {
 
 export function RightPropertiesPanel({ className = '' }: { className?: string }) {
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
+  const selectedObjectIds = useStudioStore((state) => state.selectedObjectIds);
+  const selectedGroupId = useStudioStore((state) => state.selectedGroupId);
   const projectTitle = useStudioStore((state) => state.projectTitle);
   const projectNotes = useStudioStore((state) => state.projectNotes);
   const isDirty = useStudioStore((state) => state.isDirty);
   const activeBrowserProjectId = useStudioStore((state) => state.activeBrowserProjectId);
   const projectSource = useStudioStore((state) => state.projectSource);
   const objects = useStudioStore((state) => state.objects);
+  const groups = useStudioStore((state) => state.groups);
   const settings = useStudioStore((state) => state.settings);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
+  const selectedGroup = useStudioStore((state) => state.groups.find((group) => group.id === selectedGroupId));
   const referenceObjectId = useStudioStore((state) => state.referenceObjectId);
   const selectObject = useStudioStore((state) => state.selectObject);
+  const toggleObjectSelection = useStudioStore((state) => state.toggleObjectSelection);
+  const selectGroup = useStudioStore((state) => state.selectGroup);
   const setReferenceObject = useStudioStore((state) => state.setReferenceObject);
   const alignSelectedObject = useStudioStore((state) => state.alignSelectedObject);
   const updateObject = useStudioStore((state) => state.updateObject);
+  const updateGroup = useStudioStore((state) => state.updateGroup);
   const updateObjectTransform = useStudioStore((state) => state.updateObjectTransform);
   const updateObjectMaterial = useStudioStore((state) => state.updateObjectMaterial);
   const updateProjectInfo = useStudioStore((state) => state.updateProjectInfo);
   const deleteSelected = useStudioStore((state) => state.deleteSelected);
   const duplicateSelected = useStudioStore((state) => state.duplicateSelected);
+  const groupSelected = useStudioStore((state) => state.groupSelected);
+  const ungroupSelected = useStudioStore((state) => state.ungroupSelected);
 
   const projectPanel = (
     <ProjectPanel
@@ -45,6 +54,48 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
       onNotesChange={(value) => updateProjectInfo({ projectNotes: value })}
     />
   );
+  const handleObjectListClick = (id: string, event: MouseEvent<HTMLButtonElement>) => {
+    if (event.ctrlKey || event.metaKey) {
+      toggleObjectSelection(id);
+      return;
+    }
+
+    selectObject(id);
+  };
+
+  if (selectedGroup) {
+    return (
+      <aside className={`properties-panel ${className}`.trim()}>
+        <h2>Properties</h2>
+        {projectPanel}
+        <ObjectList
+          objects={objects}
+          groups={groups}
+          selectedObjectIds={selectedObjectIds}
+          selectedGroupId={selectedGroupId}
+          onObjectSelect={handleObjectListClick}
+          onGroupSelect={selectGroup}
+          selectionMode={settings.selectionMode}
+          moveSelectedOnly={settings.moveSelectedOnly}
+        />
+        <SelectionActions
+          selectedObjectCount={selectedObjectIds.length}
+          selectedGroup={selectedGroup}
+          onGroupSelected={groupSelected}
+          onUngroupSelected={ungroupSelected}
+        />
+        <GroupPanel group={selectedGroup} onUpdate={updateGroup} />
+        <div className="object-actions">
+          <button type="button" onClick={duplicateSelected}>
+            Duplicate
+          </button>
+          <button type="button" className="danger-button" onClick={deleteSelected}>
+            Delete
+          </button>
+        </div>
+      </aside>
+    );
+  }
 
   if (!selectedObject) {
     return (
@@ -53,11 +104,30 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
         {projectPanel}
         <ObjectList
           objects={objects}
-          selectedObjectId={selectedObjectId}
-          onSelect={selectObject}
+          groups={groups}
+          selectedObjectIds={selectedObjectIds}
+          selectedGroupId={selectedGroupId}
+          onObjectSelect={handleObjectListClick}
+          onGroupSelect={selectGroup}
           selectionMode={settings.selectionMode}
           moveSelectedOnly={settings.moveSelectedOnly}
         />
+        <SelectionActions
+          selectedObjectCount={selectedObjectIds.length}
+          selectedGroup={selectedGroup}
+          onGroupSelected={groupSelected}
+          onUngroupSelected={ungroupSelected}
+        />
+        {selectedObjectIds.length > 0 && (
+          <div className="object-actions">
+            <button type="button" onClick={duplicateSelected}>
+              Duplicate
+            </button>
+            <button type="button" className="danger-button" onClick={deleteSelected}>
+              Delete
+            </button>
+          </div>
+        )}
         <p className="empty-state">
           Select an object in the canvas or scene list to adjust placement, material, lock state, visibility, and export-ready product staging.
         </p>
@@ -80,10 +150,19 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
       {projectPanel}
       <ObjectList
         objects={objects}
-        selectedObjectId={selectedObjectId}
-        onSelect={selectObject}
+        groups={groups}
+        selectedObjectIds={selectedObjectIds}
+        selectedGroupId={selectedGroupId}
+        onObjectSelect={handleObjectListClick}
+        onGroupSelect={selectGroup}
         selectionMode={settings.selectionMode}
         moveSelectedOnly={settings.moveSelectedOnly}
+      />
+      <SelectionActions
+        selectedObjectCount={selectedObjectIds.length}
+        selectedGroup={selectedGroup}
+        onGroupSelected={groupSelected}
+        onUngroupSelected={ungroupSelected}
       />
 
       <label className="field">
@@ -141,6 +220,72 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
         </button>
       </div>
     </aside>
+  );
+}
+
+function SelectionActions({
+  selectedObjectCount,
+  selectedGroup,
+  onGroupSelected,
+  onUngroupSelected,
+}: {
+  selectedObjectCount: number;
+  selectedGroup: StudioGroup | undefined;
+  onGroupSelected: () => void;
+  onUngroupSelected: () => void;
+}) {
+  return (
+    <section className="panel-section">
+      <h3>Selection Actions</h3>
+      <div className="object-actions single-row-actions">
+        <button type="button" disabled={selectedObjectCount < 2} onClick={onGroupSelected}>
+          Group Selected
+        </button>
+        <button type="button" disabled={!selectedGroup} onClick={onUngroupSelected}>
+          Ungroup
+        </button>
+      </div>
+      {selectedObjectCount > 1 && <p className="list-empty">{selectedObjectCount} objects selected.</p>}
+      {selectedGroup && <p className="list-empty">Groups move as linked objects with translate controls only. Rotate and scale stay object-level for this release.</p>}
+    </section>
+  );
+}
+
+function GroupPanel({
+  group,
+  onUpdate,
+}: {
+  group: StudioGroup;
+  onUpdate: (id: string, patch: Partial<StudioGroup>) => void;
+}) {
+  return (
+    <>
+      <label className="field">
+        <span>Name</span>
+        <input value={group.name} onChange={(event) => onUpdate(group.id, { name: event.target.value })} />
+      </label>
+
+      <section className="panel-section">
+        <h3>Group State</h3>
+        <label className="switch-field">
+          <input
+            type="checkbox"
+            checked={group.locked}
+            onChange={(event) => onUpdate(group.id, { locked: event.target.checked })}
+          />
+          Locked
+        </label>
+        <label className="switch-field">
+          <input
+            type="checkbox"
+            checked={group.visible}
+            onChange={(event) => onUpdate(group.id, { visible: event.target.checked })}
+          />
+          Visible
+        </label>
+        <p className="list-empty">Group visibility hides members at render time without changing child visibility settings.</p>
+      </section>
+    </>
   );
 }
 
@@ -551,14 +696,20 @@ function AlignmentPanel({
 
 function ObjectList({
   objects,
-  selectedObjectId,
-  onSelect,
+  groups,
+  selectedObjectIds,
+  selectedGroupId,
+  onObjectSelect,
+  onGroupSelect,
   selectionMode,
   moveSelectedOnly,
 }: {
   objects: StudioObject[];
-  selectedObjectId: string | null;
-  onSelect: (id: string | null) => void;
+  groups: StudioGroup[];
+  selectedObjectIds: string[];
+  selectedGroupId: string | null;
+  onObjectSelect: (id: string, event: MouseEvent<HTMLButtonElement>) => void;
+  onGroupSelect: (id: string | null) => void;
   selectionMode: SelectionMode;
   moveSelectedOnly: boolean;
 }) {
@@ -576,27 +727,67 @@ function ObjectList({
         <p className="list-empty">Add a primitive or import a GLB/GLTF model to start staging.</p>
       ) : (
         <div className="object-list">
-          {objects.map((object) => (
-            <button
-              key={object.id}
-              type="button"
-              className={object.id === selectedObjectId ? 'active' : ''}
-              onClick={() => onSelect(object.id)}
-            >
-              <span>
-                {object.name}
-                {object.id === selectedObjectId && <strong className="move-hint">Moves with gizmo</strong>}
-              </span>
-              <small>
-                {getObjectTypeLabel(object)} / {object.visible ? 'Visible' : 'Hidden'}
-                {object.locked ? ' / Locked' : ''}
-              </small>
-            </button>
-          ))}
+          {getSceneRows(objects, groups).map((row) =>
+            row.type === 'group' ? (
+              <button
+                key={row.group.id}
+                type="button"
+                className={`group-row ${row.group.id === selectedGroupId ? 'active' : ''}`.trim()}
+                onClick={() => onGroupSelect(row.group.id)}
+              >
+                <span>
+                  {row.group.name}
+                  {row.group.id === selectedGroupId && <strong className="move-hint">Moves as group</strong>}
+                </span>
+                <small>
+                  Group / {row.group.objectIds.length} object{row.group.objectIds.length === 1 ? '' : 's'} / {row.group.visible ? 'Visible' : 'Hidden'}
+                  {row.group.locked ? ' / Locked' : ''}
+                </small>
+              </button>
+            ) : (
+              <button
+                key={row.object.id}
+                type="button"
+                className={`${selectedObjectIds.includes(row.object.id) ? 'active' : ''} ${row.indented ? 'child-row' : ''}`.trim()}
+                onClick={(event) => onObjectSelect(row.object.id, event)}
+              >
+                <span>
+                  {row.object.name}
+                  {selectedObjectIds.length === 1 && selectedObjectIds[0] === row.object.id && <strong className="move-hint">Moves with gizmo</strong>}
+                </span>
+                <small>
+                  {getObjectTypeLabel(row.object)} / {row.object.visible ? 'Visible' : 'Hidden'}
+                  {row.object.locked ? ' / Locked' : ''}
+                </small>
+              </button>
+            ),
+          )}
         </div>
       )}
     </section>
   );
+}
+
+type SceneRow = { type: 'group'; group: StudioGroup } | { type: 'object'; object: StudioObject; indented: boolean };
+
+function getSceneRows(objects: StudioObject[], groups: StudioGroup[]): SceneRow[] {
+  const objectById = new Map(objects.map((object) => [object.id, object]));
+  const groupedObjectIds = new Set(groups.flatMap((group) => group.objectIds));
+  const rows: SceneRow[] = [];
+
+  groups.forEach((group) => {
+    rows.push({ type: 'group', group });
+    group.objectIds.forEach((objectId) => {
+      const object = objectById.get(objectId);
+      if (object) rows.push({ type: 'object', object, indented: true });
+    });
+  });
+
+  objects.forEach((object) => {
+    if (!groupedObjectIds.has(object.id)) rows.push({ type: 'object', object, indented: false });
+  });
+
+  return rows;
 }
 
 function getObjectTypeLabel(object: StudioObject) {

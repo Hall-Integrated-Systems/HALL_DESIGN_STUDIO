@@ -56,6 +56,7 @@ export function TopBar({
   const loadInputRef = useRef<HTMLInputElement>(null);
   const menuRefs = useRef<Partial<Record<TopMenuId, HTMLDivElement | null>>>({});
   const objects = useStudioStore((state) => state.objects);
+  const groups = useStudioStore((state) => state.groups);
   const projectTitle = useStudioStore((state) => state.projectTitle);
   const projectNotes = useStudioStore((state) => state.projectNotes);
   const isDirty = useStudioStore((state) => state.isDirty);
@@ -63,7 +64,10 @@ export function TopBar({
   const projectSource = useStudioStore((state) => state.projectSource);
   const settings = useStudioStore((state) => state.settings);
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
+  const selectedObjectIds = useStudioStore((state) => state.selectedObjectIds);
+  const selectedGroupId = useStudioStore((state) => state.selectedGroupId);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
+  const selectedGroup = useStudioStore((state) => state.groups.find((group) => group.id === selectedGroupId));
   const cameraPreset = useStudioStore((state) => state.cameraPreset);
   const cameraDistance = useStudioStore((state) => state.cameraDistance);
   const loadProject = useStudioStore((state) => state.loadProject);
@@ -84,15 +88,17 @@ export function TopBar({
   const updateExportFileName = useStudioStore((state) => state.updateExportFileName);
   const resetCamera = useStudioStore((state) => state.resetCamera);
   const pushToast = useStudioStore((state) => state.pushToast);
-  const exportFileName = settings.exportFileNameEdited ? settings.exportFileName : selectedObject?.name || 'hall-product-studio-render';
+  const selectedExportName = selectedGroup?.name || selectedObject?.name || 'hall-product-studio-render';
+  const exportFileName = settings.exportFileNameEdited ? settings.exportFileName : selectedExportName;
   const saveStateLabel = getSaveStateLabel(isDirty, activeBrowserProjectId, projectSource);
+  const hasSelection = Boolean(selectedObjectId || selectedGroupId || selectedObjectIds.length > 0);
   const [browserProjects, setBrowserProjects] = useState<BrowserProjectRecord[]>([]);
   const [customPresets, setCustomPresets] = useState<CustomRenderPreset[]>([]);
   const [storageStatus, setStorageStatus] = useState('');
   const [brandLogoFailed, setBrandLogoFailed] = useState(false);
   const autosaveReadyRef = useRef(false);
 
-  const buildCurrentProject = () => createProject(objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
+  const buildCurrentProject = () => createProject(objects, groups, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
   const closeTopMenu = () => setOpenMenu(null);
   const handleRequestExport = (event?: { currentTarget?: { blur: () => void } }) => {
     requestExportScreenshot();
@@ -195,10 +201,10 @@ export function TopBar({
       }
 
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        if (selectedObjectId) {
+        if (hasSelection) {
           event.preventDefault();
           deleteSelected();
-          pushToast('Selected object deleted.', 'info');
+          pushToast('Selection deleted.', 'info');
         }
         return;
       }
@@ -248,7 +254,7 @@ export function TopBar({
   };
 
   const handleDownloadProject = () => {
-    downloadProject(objects, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
+    downloadProject(objects, groups, settings, projectTitle, projectNotes, cameraPreset, cameraDistance);
     pushToast('Project JSON exported. Browser save state unchanged.', 'success');
   };
 
@@ -494,7 +500,7 @@ export function TopBar({
             />
           </label>
           <div className="menu-button-row">
-            <button type="button" onClick={() => requestFrame('selected')} disabled={!selectedObject}>
+            <button type="button" onClick={() => requestFrame('selected')} disabled={!hasSelection}>
               Frame Selected
             </button>
             <button type="button" onClick={() => requestFrame('all')} disabled={objects.length === 0}>
@@ -784,13 +790,13 @@ export function TopBar({
           </section>
           <section className="menu-section">
             <h2>Shortcuts</h2>
-            <p className="menu-note">Delete removes the selected object. Ctrl/Cmd+S saves to browser. Ctrl/Cmd+E exports PNG. Escape deselects.</p>
+            <p className="menu-note">Delete removes the selected object or group. Ctrl/Cmd-click multi-selects objects in Scene Objects. Ctrl/Cmd+S saves to browser. Ctrl/Cmd+E exports PNG. Escape deselects.</p>
           </section>
           <section className="menu-section">
             <h2>Known Limitations</h2>
             <p className="menu-note">
-              This is a product staging and mockup tool, not CAD. Multi-file GLTF texture relinking, STL editing, slicing, advanced offline rendering,
-              and cloud sync are intentionally out of scope.
+              This is a product staging and mockup tool, not CAD. Groups are linked object transforms, not boolean merges or reusable custom assemblies.
+              Multi-file GLTF texture relinking, STL editing, slicing, advanced offline rendering, and cloud sync are intentionally out of scope.
             </p>
           </section>
         </MenuGroup>

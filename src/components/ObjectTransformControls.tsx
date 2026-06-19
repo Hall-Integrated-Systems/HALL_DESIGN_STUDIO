@@ -3,7 +3,7 @@ import { ThreeEvent, useThree } from '@react-three/fiber';
 import { ComponentRef, useEffect, useRef } from 'react';
 import type { Group } from 'three';
 import { useStudioStore } from '../state/studioStore';
-import type { AxisMoveLock, StudioObject, Vec3 } from '../types/studioTypes';
+import type { AxisMoveLock, StudioGroup, StudioObject, Vec3 } from '../types/studioTypes';
 
 type TransformControlsEvents = {
   addEventListener: (type: string, listener: (event: unknown) => void) => void;
@@ -73,6 +73,81 @@ export function ObjectTransformControls({
       camera={camera}
       domElement={gl.domElement}
       mode={mode}
+      showX={axisMoveLock === 'free' || axisMoveLock === 'x'}
+      showY={axisMoveLock === 'free' || axisMoveLock === 'y'}
+      showZ={axisMoveLock === 'free' || axisMoveLock === 'z'}
+      onPointerDown={stopTransformPointer}
+      onPointerMove={stopTransformPointer}
+      onPointerUp={stopTransformPointer}
+    />
+  );
+}
+
+export function GroupTransformControls({
+  group,
+  target,
+  setOrbitEnabled,
+  onDraggingChange,
+}: {
+  group: StudioGroup;
+  target: Group;
+  setOrbitEnabled: (enabled: boolean) => void;
+  onDraggingChange: (isDragging: boolean) => void;
+}) {
+  const controlsRef = useRef<ComponentRef<typeof TransformControls> | null>(null);
+  const dragStartPositionRef = useRef<Vec3>([target.position.x, target.position.y, target.position.z]);
+  const lastAppliedPositionRef = useRef<Vec3>([target.position.x, target.position.y, target.position.z]);
+  const settings = useStudioStore((state) => state.settings);
+  const axisMoveLock = settings.axisMoveLock;
+  const updateGroupTransform = useStudioStore((state) => state.updateGroupTransform);
+  const camera = useThree((state) => state.camera);
+  const gl = useThree((state) => state.gl);
+
+  useEffect(() => {
+    const controls = controlsRef.current as TransformControlsEvents | null;
+    if (!controls) return;
+
+    const syncTransform = () => {
+      const position = getConstrainedPosition(settings, dragStartPositionRef.current, [target.position.x, target.position.y, target.position.z], 'translate');
+      target.position.set(...position);
+      updateGroupTransform(group.id, lastAppliedPositionRef.current, position);
+      lastAppliedPositionRef.current = position;
+    };
+
+    const handleDragging = (event: { value: boolean }) => {
+      if (event.value) {
+        const start: Vec3 = [target.position.x, target.position.y, target.position.z];
+        dragStartPositionRef.current = start;
+        lastAppliedPositionRef.current = start;
+      } else {
+        syncTransform();
+      }
+      setOrbitEnabled(!event.value);
+      onDraggingChange(event.value);
+    };
+
+    controls.addEventListener('objectChange', syncTransform);
+    controls.addEventListener('mouseUp', syncTransform);
+    controls.addEventListener('dragging-changed', handleDragging as (event: unknown) => void);
+
+    return () => {
+      controls.removeEventListener('objectChange', syncTransform);
+      controls.removeEventListener('mouseUp', syncTransform);
+      controls.removeEventListener('dragging-changed', handleDragging as (event: unknown) => void);
+    };
+  }, [group.id, onDraggingChange, setOrbitEnabled, settings, target, updateGroupTransform]);
+
+  const stopTransformPointer = (event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
+  };
+
+  return (
+    <TransformControls
+      ref={controlsRef}
+      object={target}
+      camera={camera}
+      domElement={gl.domElement}
+      mode="translate"
       showX={axisMoveLock === 'free' || axisMoveLock === 'x'}
       showY={axisMoveLock === 'free' || axisMoveLock === 'y'}
       showZ={axisMoveLock === 'free' || axisMoveLock === 'z'}

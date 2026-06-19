@@ -95,6 +95,14 @@ export interface StudioObject {
   fileName?: string;
 }
 
+export interface StudioGroup {
+  id: string;
+  name: string;
+  objectIds: string[];
+  locked: boolean;
+  visible: boolean;
+}
+
 export interface AnnotationData {
   kind: AnnotationKind;
   text: string;
@@ -165,6 +173,7 @@ export interface StudioProject {
   title?: string;
   notes?: string;
   objects: StudioObject[];
+  groups?: StudioGroup[];
   settings?: StudioSettings;
   cameraPreset?: CameraPreset;
   cameraDistance?: number;

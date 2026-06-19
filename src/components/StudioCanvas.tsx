@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import type { ReactNode } from 'react';
 import type { Mesh, MeshStandardMaterial, Object3D, Quaternion } from 'three';
 import { Box3, Box3Helper, Color, DoubleSide, FrontSide, Group, TextureLoader, Vector2, Vector3 } from 'three';
-import { ObjectTransformControls } from './ObjectTransformControls';
+import { GroupTransformControls, ObjectTransformControls } from './ObjectTransformControls';
 import { TransformToolbar } from './TransformToolbar';
 import { useStudioStore } from '../state/studioStore';
 import type {
@@ -13,6 +13,7 @@ import type {
   MountingHelperData,
   PrimitiveKind,
   StudioAssetPart,
+  StudioGroup,
   StudioMaterial,
   StudioObject,
   Vec3,
@@ -31,11 +32,20 @@ export function StudioCanvas({ onCanvasPointerDown }: { onCanvasPointerDown?: ()
 
 function StudioScene() {
   const objects = useStudioStore((state) => state.objects);
+  const groups = useStudioStore((state) => state.groups);
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
-  const selectObject = useStudioStore((state) => state.selectObject);
+  const selectedObjectIds = useStudioStore((state) => state.selectedObjectIds);
+  const selectedGroupId = useStudioStore((state) => state.selectedGroupId);
+  const clearSelection = useStudioStore((state) => state.clearSelection);
   const settings = useStudioStore((state) => state.settings);
   const isExporting = useStudioStore((state) => state.isExporting);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
+  const groupByObjectId = useMemo(() => {
+    const map = new Map<string, StudioGroup>();
+    groups.forEach((group) => group.objectIds.forEach((objectId) => map.set(objectId, group)));
+    return map;
+  }, [groups]);
+  const selectedGroup = groups.find((group) => group.id === selectedGroupId);
 
   return (
     <>
@@ -76,7 +86,8 @@ function StudioScene() {
           <SceneObject
             key={object.id}
             object={object}
-            isSelected={object.id === selectedObjectId}
+            isSelected={object.id === selectedObjectId || selectedObjectIds.includes(object.id)}
+            group={groupByObjectId.get(object.id)}
             shadowsEnabled={settings.shadowsEnabled}
             setOrbitEnabled={setOrbitEnabled}
             selectionMode={settings.selectionMode}
@@ -85,6 +96,9 @@ function StudioScene() {
             editorHelpersVisible={!isExporting}
           />
         ))}
+        {selectedGroup && !isExporting && (
+          <GroupSelectionControls group={selectedGroup} setOrbitEnabled={setOrbitEnabled} />
+        )}
       </Suspense>
 
       {settings.axisHelperVisible && !isExporting && <AxisDirectionHelper />}
@@ -97,7 +111,7 @@ function StudioScene() {
 
       <mesh
         position={[0, -1000, 0]}
-        onPointerDown={() => settings.selectionMode === 'canvas-select-move' && !settings.moveSelectedOnly && selectObject(null)}
+        onPointerDown={() => settings.selectionMode === 'canvas-select-move' && !settings.moveSelectedOnly && clearSelection()}
       >
         <boxGeometry args={[0.01, 0.01, 0.01]} />
         <meshBasicMaterial transparent opacity={0} />
@@ -109,6 +123,7 @@ function StudioScene() {
 function SceneObject({
   object,
   isSelected,
+  group,
   shadowsEnabled,
   setOrbitEnabled,
   selectionMode,
@@ -118,6 +133,7 @@ function SceneObject({
 }: {
   object: StudioObject;
   isSelected: boolean;
+  group?: StudioGroup;
   shadowsEnabled: boolean;
   setOrbitEnabled: (enabled: boolean) => void;
   selectionMode: 'canvas-select-move' | 'panel-select-only';
@@ -128,6 +144,8 @@ function SceneObject({
   const groupRef = useRef<Group | null>(null);
   const [transformTarget, setTransformTarget] = useState<Group | null>(null);
   const selectObject = useStudioStore((state) => state.selectObject);
+  const effectiveVisible = object.visible && (group?.visible ?? true);
+  const effectiveLocked = object.locked || (group?.locked ?? false);
 
   const handleGroupRef = useCallback((node: Group | null) => {
     groupRef.current = node;
@@ -148,23 +166,90 @@ function SceneObject({
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
-    if (!object.visible) return;
+    if (!effectiveVisible) return;
     if (moveSelectedOnly || selectionMode === 'panel-select-only') return;
+    if (effectiveLocked) return;
     if (ignoreLockedObjectsInCanvasSelection && object.locked) return;
     selectObject(object.id);
   };
 
   return (
     <>
-      <group ref={handleGroupRef} onPointerDown={handlePointerDown} visible={object.visible}>
+      <group ref={handleGroupRef} onPointerDown={handlePointerDown} visible={effectiveVisible}>
         <ObjectGeometry object={object} shadowsEnabled={shadowsEnabled} />
       </group>
-      {editorHelpersVisible && isSelected && transformTarget && object.visible && <SelectionBounds target={transformTarget} />}
-      {editorHelpersVisible && isSelected && transformTarget && object.visible && !object.locked && (
+      {editorHelpersVisible && isSelected && transformTarget && effectiveVisible && <SelectionBounds target={transformTarget} />}
+      {editorHelpersVisible && isSelected && transformTarget && effectiveVisible && !effectiveLocked && (
         <ObjectTransformControls object={object} target={transformTarget} setOrbitEnabled={setOrbitEnabled} />
       )}
     </>
   );
+}
+
+function GroupSelectionControls({
+  group,
+  setOrbitEnabled,
+}: {
+  group: StudioGroup;
+  setOrbitEnabled: (enabled: boolean) => void;
+}) {
+  const targetRef = useRef<Group | null>(null);
+  const [transformTarget, setTransformTarget] = useState<Group | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const scene = useThree((state) => state.scene);
+  const handleTargetRef = useCallback((node: Group | null) => {
+    targetRef.current = node;
+    setTransformTarget(node);
+  }, []);
+
+  const syncTargetToBounds = useCallback(() => {
+    if (isDragging || !targetRef.current) return;
+    const bounds = getObjectIdsBounds(scene, group.objectIds);
+    if (!bounds) return;
+
+    const center = bounds.getCenter(new Vector3());
+    targetRef.current.position.set(center.x, center.y, center.z);
+  }, [group.objectIds, isDragging, scene]);
+
+  useEffect(() => {
+    syncTargetToBounds();
+  }, [syncTargetToBounds]);
+
+  useFrame(() => {
+    syncTargetToBounds();
+  });
+
+  if (!group.visible) return null;
+
+  return (
+    <>
+      <group ref={handleTargetRef} visible={false} />
+      <GroupSelectionBounds objectIds={group.objectIds} />
+      {transformTarget && !group.locked && (
+        <GroupTransformControls group={group} target={transformTarget} setOrbitEnabled={setOrbitEnabled} onDraggingChange={setIsDragging} />
+      )}
+    </>
+  );
+}
+
+function GroupSelectionBounds({ objectIds }: { objectIds: string[] }) {
+  const helper = useMemo(() => new Box3Helper(new Box3(), new Color('#f0d48c')), []);
+  const scene = useThree((state) => state.scene);
+
+  const syncBounds = useCallback(() => {
+    const bounds = getObjectIdsBounds(scene, objectIds);
+    if (bounds) helper.box.copy(bounds);
+  }, [helper, objectIds, scene]);
+
+  useEffect(() => {
+    syncBounds();
+  }, [syncBounds]);
+
+  useFrame(() => {
+    syncBounds();
+  });
+
+  return <primitive object={helper} />;
 }
 
 function AxisDirectionHelper() {
@@ -671,6 +756,9 @@ function CameraController() {
   const cameraDistance = useStudioStore((state) => state.cameraDistance);
   const frameRequest = useStudioStore((state) => state.frameRequest);
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
+  const selectedObjectIds = useStudioStore((state) => state.selectedObjectIds);
+  const selectedGroupId = useStudioStore((state) => state.selectedGroupId);
+  const selectedGroup = useStudioStore((state) => state.groups.find((group) => group.id === selectedGroupId));
   const camera = useThree((state) => state.camera);
   const scene = useThree((state) => state.scene);
   const controls = useThree((state) => state.controls) as { target?: { set: (x: number, y: number, z: number) => void }; update?: () => void } | undefined;
@@ -686,7 +774,8 @@ function CameraController() {
   useEffect(() => {
     if (!frameRequest) return;
 
-    const bounds = getFrameBounds(scene, frameRequest.target === 'selected' ? selectedObjectId : null);
+    const selectedFrameIds = selectedGroup?.objectIds ?? (selectedObjectIds.length > 0 ? selectedObjectIds : selectedObjectId ? [selectedObjectId] : null);
+    const bounds = frameRequest.target === 'selected' && selectedFrameIds ? getObjectIdsBounds(scene, selectedFrameIds) : getFrameBounds(scene);
     if (!bounds) return;
 
     const center = bounds.getCenter(new Vector3());
@@ -704,7 +793,7 @@ function CameraController() {
     camera.lookAt(center);
     controls?.target?.set(center.x, center.y, center.z);
     controls?.update?.();
-  }, [camera, cameraDistance, controls, frameRequest, scene, selectedObjectId]);
+  }, [camera, cameraDistance, controls, frameRequest, scene, selectedGroup?.objectIds, selectedObjectId, selectedObjectIds]);
 
   return null;
 }
@@ -713,7 +802,9 @@ function HighResolutionExporter() {
   const exportRequestToken = useStudioStore((state) => state.exportRequestToken);
   const settings = useStudioStore((state) => state.settings);
   const selectedObjectId = useStudioStore((state) => state.selectedObjectId);
+  const selectedGroupId = useStudioStore((state) => state.selectedGroupId);
   const selectedObject = useStudioStore((state) => state.objects.find((object) => object.id === selectedObjectId));
+  const selectedGroup = useStudioStore((state) => state.groups.find((group) => group.id === selectedGroupId));
   const pushToast = useStudioStore((state) => state.pushToast);
   const completeExportScreenshot = useStudioStore((state) => state.completeExportScreenshot);
   const gl = useThree((state) => state.gl);
@@ -731,7 +822,7 @@ function HighResolutionExporter() {
     const previousSize = gl.getSize(new Vector2());
     const previousPixelRatio = gl.getPixelRatio();
     const previousAspect = 'aspect' in camera && typeof camera.aspect === 'number' ? camera.aspect : null;
-    const fileName = settings.exportFileNameEdited ? settings.exportFileName : selectedObject?.name || 'hall-product-studio-render';
+    const fileName = settings.exportFileNameEdited ? settings.exportFileName : selectedGroup?.name || selectedObject?.name || 'hall-product-studio-render';
 
     try {
       gl.setPixelRatio(1);
@@ -766,6 +857,7 @@ function HighResolutionExporter() {
     gl,
     pushToast,
     scene,
+    selectedGroup?.name,
     selectedObject?.name,
     settings.exportFileName,
     settings.exportFileNameEdited,
@@ -795,7 +887,7 @@ function getCameraPosition(preset: CameraPreset, distance: number) {
   return positions[preset];
 }
 
-function getFrameBounds(scene: Object3D, selectedObjectId: string | null) {
+function getFrameBounds(scene: Object3D) {
   const bounds = new Box3();
   let hasBounds = false;
 
@@ -803,7 +895,26 @@ function getFrameBounds(scene: Object3D, selectedObjectId: string | null) {
     if (!(child instanceof Group)) return;
     const objectId = child.userData.studioObjectId as string | undefined;
     if (!objectId || !child.visible) return;
-    if (selectedObjectId && objectId !== selectedObjectId) return;
+
+    const childBounds = new Box3().setFromObject(child);
+    if (childBounds.isEmpty()) return;
+
+    bounds.union(childBounds);
+    hasBounds = true;
+  });
+
+  return hasBounds ? bounds : null;
+}
+
+function getObjectIdsBounds(scene: Object3D, objectIds: string[]) {
+  const selectedIds = new Set(objectIds);
+  const bounds = new Box3();
+  let hasBounds = false;
+
+  scene.traverse((child) => {
+    if (!(child instanceof Group)) return;
+    const objectId = child.userData.studioObjectId as string | undefined;
+    if (!objectId || !selectedIds.has(objectId) || !child.visible) return;
 
     const childBounds = new Box3().setFromObject(child);
     if (childBounds.isEmpty()) return;

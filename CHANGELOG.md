@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.8.0
+
+- Added core object grouping for linked selection, movement, duplication, lock/hide, save/load, browser autosave, and JSON export/import.
+- Added Ctrl/Cmd-click multi-select in Scene Objects plus Group Selected and Ungroup actions in the Properties panel.
+- Added clear group rows with indented children, group object counts, and group lock/visibility state in Scene Objects.
+- Group movement uses translate-only delta movement so child spacing is preserved; axis locks and Snap to Grid apply to the group delta.
+- Group visibility hides members at render/export time without mutating child visibility, and group lock blocks canvas movement/selection while still allowing panel selection.
+- Grouped project data remains optional in version 1 project JSON; older JSON without groups still imports normally.
+- Reusable custom assemblies, a custom assembly IndexedDB store, CAD boolean merging, mesh union, STL editing, slicing, and geometry cleanup remain deferred.
+
 ## v2.7.1
 
 - Moved the desktop transform mode and axis-lock toolbar into the fixed header controls, with a clean second row at standard desktop widths and inline placement on wider screens.

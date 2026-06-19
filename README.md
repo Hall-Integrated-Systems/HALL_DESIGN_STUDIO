@@ -48,6 +48,8 @@ npm run build
 - Annotation objects: text labels, arrows, dimension lines, and marker dots
 - Mounting Helpers for visual hole, slot, washer, rivnut, standoff, bolt-head, centerline, and clearance planning
 - Object selection, transform controls, duplicate, delete, lock, and visibility
+- Scene Objects Ctrl/Cmd-click multi-select with Group Selected and Ungroup actions
+- Linked object groups for translate movement, duplicate, delete, lock/hide, save/load, browser autosave, and JSON export/import
 - Selection modes for normal canvas picking, panel-only layer selection, and move-panel-selected-only workflows
 - Axis direction helper and X/Y/Z color-coded position inputs
 - Axis lock buttons for Free, X-only, Y-only, and Z-only movement
@@ -108,6 +110,16 @@ Suggested amp-mount workflow: add a base plate, add Round Hole or Rivnut markers
 
 Use `Canvas Select + Move` for normal staging where clicking an object selects it. Switch to `Panel Select Only` in the View menu when parts overlap or transform arrows sit over nearby objects; then choose the active layer from the right Scene Objects list and use transform controls without accidental canvas reselection. Enable `Move Panel-Selected Object Only` when the selected object should be controlled only through the panel-selected layer and transform gizmo, with canvas picking suppressed. Use the axis lock buttons near the transform mode controls for `Free`, `X only`, `Y only`, or `Z only` movement when placing real-world parts. Enable `Ignore locked objects in canvas selection` when base plates, rails, amp bodies, or reference parts should stay selectable from the panel but not by canvas clicks.
 
+### Object Grouping
+
+Use Ctrl/Cmd-click in the Scene Objects list to select two or more primitives, assets, image planes, annotations, imported models, or mounting helpers, then choose `Group Selected` in the Properties panel. Groups appear as their own rows with indented child objects, object counts, and lock/visibility state. Selecting a group lets the assembly move together with translate controls while preserving the relative spacing of every child object.
+
+Group movement respects `Free`, `X only`, `Y only`, and `Z only` axis locks. When `Snap to Grid` is enabled, the group movement delta snaps without converting the group into a merged mesh or changing child transforms unexpectedly. Rotate and scale remain object-level controls in v2.8.0; group controls are intentionally translate-only.
+
+Duplicate on a selected group creates a new group with duplicated children and an offset that respects the active duplicate and snap settings. Ungroup removes only the group metadata and leaves child objects in their current world positions. Deleting a selected group deletes the group and its child objects. Group visibility hides members at render/export time without changing child object visibility, and group lock prevents canvas movement/selection while the group remains selectable from the Scene Objects panel.
+
+Grouping is linked object behavior for staging assemblies. It is not CAD boolean merge, mesh union, STL editing, slicing, or geometry cleanup. Persistent reusable custom assemblies and a custom assembly browser store are deferred.
+
 On desktop, the Translate/Rotate/Scale and Free/X/Y/Z controls live in the fixed header control area rather than floating over the canvas. Standard desktop widths use a compact second header row, while wider layouts can keep the controls inline with the brand and top menus.
 
 The X, Y, and Z fields in the properties panel match the transform colors: X red, Y green, Z blue. Axis lock buttons and the direction helper use the same colors. The View menu also includes a direction helper with +X/-X, +Y/-Y, and +Z/-Z cues for front/back/left/right/up/down orientation while planning real physical layouts such as amp mounts and brackets. The helper and transform controls are editor aids and are hidden from PNG export; mounting helpers remain visible because they are intentional scene objects.
@@ -149,4 +161,5 @@ The app is built with Vite and deployed as static files through Azure Static Web
 - Prefer self-contained `.glb` models over external-file `.gltf` packages.
 - Large image planes and model data can increase browser storage, project JSON size, and export time.
 - Mounting helpers are visual planning markers only and do not cut geometry or validate hardware fit.
+- Groups are linked transform metadata, not merged geometry or reusable custom assembly definitions.
 - The production build currently emits an expected large Three.js bundle warning.

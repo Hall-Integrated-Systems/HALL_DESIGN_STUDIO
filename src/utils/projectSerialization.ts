@@ -1,8 +1,9 @@
-import type { CameraPreset, StudioObject, StudioProject, StudioSettings } from '../types/studioTypes';
+import type { CameraPreset, StudioGroup, StudioObject, StudioProject, StudioSettings } from '../types/studioTypes';
 import { APP_VERSION } from '../config/presets';
 
 export function createProject(
   objects: StudioObject[],
+  groups: StudioGroup[],
   settings: StudioSettings,
   title: string,
   notes: string,
@@ -16,6 +17,7 @@ export function createProject(
     title,
     notes,
     objects,
+    groups,
     settings,
     cameraPreset,
     cameraDistance,
@@ -24,13 +26,14 @@ export function createProject(
 
 export function downloadProject(
   objects: StudioObject[],
+  groups: StudioGroup[],
   settings: StudioSettings,
   title: string,
   notes: string,
   cameraPreset?: CameraPreset,
   cameraDistance?: number,
 ) {
-  const project = createProject(objects, settings, title, notes, cameraPreset, cameraDistance);
+  const project = createProject(objects, groups, settings, title, notes, cameraPreset, cameraDistance);
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
