@@ -9,6 +9,7 @@ import {
   listCustomAssemblies,
   saveCustomAssembly,
 } from '../utils/localProjectStorage';
+import { trackClarityEvent } from '../utils/clarity';
 
 type VectorField = 'position' | 'rotation' | 'scale';
 
@@ -71,6 +72,11 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
 
     selectObject(id);
   };
+  const handleGroupSelected = () => {
+    if (selectedObjectIds.length < 2) return;
+    groupSelected();
+    trackClarityEvent('object_grouped');
+  };
   const handleSaveGroupAsAssembly = async (group: StudioGroup) => {
     const name = window.prompt('Custom assembly name', group.name)?.trim();
     if (!name) return;
@@ -111,7 +117,7 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
         <SelectionActions
           selectedObjectCount={selectedObjectIds.length}
           selectedGroup={selectedGroup}
-          onGroupSelected={groupSelected}
+          onGroupSelected={handleGroupSelected}
           onUngroupSelected={ungroupSelected}
         />
         <GroupPanel group={selectedGroup} onUpdate={updateGroup} />
@@ -150,7 +156,7 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
         <SelectionActions
           selectedObjectCount={selectedObjectIds.length}
           selectedGroup={selectedGroup}
-          onGroupSelected={groupSelected}
+          onGroupSelected={handleGroupSelected}
           onUngroupSelected={ungroupSelected}
         />
         {selectedObjectIds.length > 0 && (
@@ -196,7 +202,7 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
       <SelectionActions
         selectedObjectCount={selectedObjectIds.length}
         selectedGroup={selectedGroup}
-        onGroupSelected={groupSelected}
+        onGroupSelected={handleGroupSelected}
         onUngroupSelected={ungroupSelected}
       />
 

@@ -26,6 +26,7 @@ import { productRenderPresets, sceneTemplates } from '../config/presets';
 import { builtInAssets, imageDecalAssets } from '../config/assets';
 import { getProjectTemplate } from '../config/projectTemplates';
 import { getMountingHelperDefinition } from '../config/mountingHelpers';
+import { trackClarityEvent } from '../utils/clarity';
 
 interface ImportedAssetHistoryItem {
   id: string;
@@ -972,11 +973,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setCameraDistance: (distance) => set((state) => ({ cameraDistance: distance, cameraResetToken: state.cameraResetToken + 1, isDirty: true })),
   resetCamera: () => set((state) => ({ cameraPreset: 'isometric', cameraDistance: 6, cameraResetToken: state.cameraResetToken + 1, isDirty: true })),
   requestFrame: (target) => set((state) => ({ frameRequest: { target, token: (state.frameRequest?.token ?? 0) + 1 } })),
-  requestExportScreenshot: () =>
-    set((state) => {
-      if (state.isExporting) return state;
-      return { exportRequestToken: state.exportRequestToken + 1, isExporting: true };
-    }),
+  requestExportScreenshot: () => {
+    const state = get();
+    if (state.isExporting) return;
+
+    trackClarityEvent('export_started');
+    trackClarityEvent('screenshot_export');
+    if (state.settings.screenshotSize !== 'viewport') {
+      trackClarityEvent('high_res_export');
+    }
+
+    set({ exportRequestToken: state.exportRequestToken + 1, isExporting: true });
+  },
   completeExportScreenshot: () => set({ isExporting: false }),
   pushToast: (message, tone = 'info') => {
     const id = makeId();

@@ -6,6 +6,7 @@ import type { BackgroundMode, CameraPreset, ProjectSource, ProjectTemplateId, Sc
 import { APP_VERSION, productRenderPresets, sceneTemplates } from '../config/presets';
 import { projectTemplates } from '../config/projectTemplates';
 import { TransformToolbar } from './TransformToolbar';
+import { trackClarityEvent } from '../utils/clarity';
 import {
   clearAutosaveDraft,
   createBrowserProjectRecord,
@@ -37,6 +38,7 @@ const screenshotSizes: Array<{ value: ScreenshotSize; label: string }> = [
 
 const BROWSER_PROJECT_WARNING_BYTES = 5 * 1024 * 1024;
 const LIVE_SITE_URL = 'https://studio.hallintegratedsystems.com';
+const PUBLIC_PRIVACY_URL = 'https://www.hallintegratedsystems.com/privacy.html';
 const formatScreenshotSize = (value: ScreenshotSize) => screenshotSizes.find((size) => size.value === value)?.label ?? value;
 const getSaveStateLabel = (isDirty: boolean, browserProjectId: string | null, projectSource: ProjectSource) => {
   if (isDirty) return 'Unsaved Changes';
@@ -344,6 +346,7 @@ export function TopBar({
     });
     setCameraPreset(preset.cameraPreset);
     setCameraDistance(preset.cameraDistance);
+    trackClarityEvent('preset_loaded');
   };
 
   const handleDeleteCustomRenderPreset = async (preset: CustomRenderPreset) => {
@@ -389,6 +392,7 @@ export function TopBar({
           onApply={(templateId) => {
             if (confirmReset('Create a new scene from this template')) {
               applyProjectTemplate(templateId);
+              trackClarityEvent('template_selected');
               closeTopMenu();
             }
           }}
@@ -412,6 +416,7 @@ export function TopBar({
                   type="button"
                   onClick={() => {
                     applySceneTemplate(value as keyof typeof sceneTemplates);
+                    trackClarityEvent('template_selected');
                     closeTopMenu();
                   }}
                 >
@@ -429,6 +434,7 @@ export function TopBar({
                   type="button"
                   onClick={() => {
                     applyProductRenderPreset(value as keyof typeof productRenderPresets);
+                    trackClarityEvent('preset_loaded');
                     closeTopMenu();
                   }}
                 >
@@ -786,6 +792,13 @@ export function TopBar({
             <h2>Storage</h2>
             <p className="menu-note">
               Large image planes, embedded models, and custom assemblies can make browser storage heavy. Use JSON export as the backup path for important projects.
+            </p>
+          </section>
+          <section className="menu-section">
+            <h2>Privacy</h2>
+            <p className="menu-note">
+              Hall Product Studio uses Microsoft Clarity to understand clicks, scrolling, and app interactions so the experience can be improved. Microsoft may process this data in accordance with the Microsoft Privacy Statement. See the{' '}
+              <a href={PUBLIC_PRIVACY_URL}>Hall Integrated Systems privacy policy</a>.
             </p>
           </section>
           <section className="menu-section">

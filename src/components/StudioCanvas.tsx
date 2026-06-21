@@ -19,6 +19,7 @@ import type {
   Vec3,
 } from '../types/studioTypes';
 import { downloadDataUrl, getScreenshotDimensions } from '../utils/exportScreenshot';
+import { trackClarityEvent } from '../utils/clarity';
 
 export function StudioCanvas({ onCanvasPointerDown }: { onCanvasPointerDown?: () => void }) {
   return (
@@ -835,8 +836,10 @@ function HighResolutionExporter() {
 
       gl.render(scene, camera);
       downloadDataUrl(canvas.toDataURL('image/png'), fileName);
+      trackClarityEvent('export_completed');
       pushToast(`Exported ${target.width} x ${target.height} PNG.`, 'success');
     } catch {
+      trackClarityEvent('export_failed');
       pushToast('PNG export failed. Try a smaller export size or reduce scene complexity.', 'error');
     } finally {
       gl.setSize(previousSize.x, previousSize.y, false);

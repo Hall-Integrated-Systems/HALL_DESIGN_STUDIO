@@ -6,6 +6,7 @@ import type { AnnotationKind, CustomAssembly, PrimitiveKind } from '../types/stu
 import { assetCategories, builtInAssets, imageDecalAssets } from '../config/assets';
 import { mountingHelpers } from '../config/mountingHelpers';
 import { CUSTOM_ASSEMBLIES_CHANGED_EVENT, deleteCustomAssembly, listCustomAssemblies } from '../utils/localProjectStorage';
+import { trackClarityEvent } from '../utils/clarity';
 
 const primitiveButtons: Array<{ kind: PrimitiveKind; label: string }> = [
   { kind: 'cube', label: 'Cube' },
@@ -138,7 +139,19 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
 
   const handleAddPrimitive = (kind: PrimitiveKind, label: string) => {
     addPrimitive(kind);
+    trackClarityEvent('asset_added');
     pushToast(`${label} added.`, 'success');
+  };
+
+  const handleAddBuiltInAsset = (assetId: string) => {
+    const asset = builtInAssets.find((candidate) => candidate.id === assetId);
+    if (!asset) return;
+
+    addBuiltInAsset(assetId);
+    trackClarityEvent('asset_added');
+    if (asset.category === 'Product Parts') {
+      trackClarityEvent('product_added');
+    }
   };
 
   const handleImport = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -153,6 +166,7 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
       const modelDataUrl = await readFileAsDataUrl(file);
       await validateGltf(modelDataUrl);
       addModel(file.name, modelDataUrl);
+      trackClarityEvent('asset_added');
       pushToast(`Imported ${file.name}.`, 'success');
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Import failed. Try a different GLB or GLTF file.', 'error');
@@ -182,6 +196,7 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
       }
 
       addImagePlane(file.name, imageDataUrl, imageSize.width, imageSize.height);
+      trackClarityEvent('asset_added');
       pushToast(`Imported ${file.name}.`, 'success');
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Image import failed. Try a smaller PNG, JPG, or WEBP file.', 'error');
@@ -193,6 +208,7 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
   const handleAddCustomAssembly = (assembly: CustomAssembly) => {
     const assemblyName = getCustomAssemblyDisplayName(assembly);
     addCustomAssemblyToScene(assembly);
+    trackClarityEvent('asset_added');
     pushToast(`${assemblyName} added to scene.`, 'success');
   };
 
@@ -241,12 +257,19 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
                 <summary>{category}</summary>
                 <div className="toolbar-group">
                   {builtIns.map((asset) => (
-                    <button key={asset.id} type="button" onClick={() => addBuiltInAsset(asset.id)}>
+                    <button key={asset.id} type="button" onClick={() => handleAddBuiltInAsset(asset.id)}>
                       {asset.name}
                     </button>
                   ))}
                   {imported.map((asset) => (
-                    <button key={asset.id} type="button" onClick={() => addImportedAsset(asset.id)}>
+                    <button
+                      key={asset.id}
+                      type="button"
+                      onClick={() => {
+                        addImportedAsset(asset.id);
+                        trackClarityEvent('asset_added');
+                      }}
+                    >
                       {asset.name}
                     </button>
                   ))}
@@ -293,6 +316,7 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
               type="button"
               onClick={() => {
                 addMountingHelper(helper.kind);
+                trackClarityEvent('asset_added');
                 pushToast(`${helper.baseName} added.`, 'success');
               }}
             >
@@ -309,12 +333,26 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
         </button>
         <div className="toolbar-group">
           {imageDecalAssets.map((asset) => (
-            <button key={asset.id} type="button" onClick={() => addImageDecalAsset(asset.id)}>
+            <button
+              key={asset.id}
+              type="button"
+              onClick={() => {
+                addImageDecalAsset(asset.id);
+                trackClarityEvent('asset_added');
+              }}
+            >
               {asset.name}
             </button>
           ))}
           {importedImageHistory.map((asset) => (
-            <button key={asset.id} type="button" onClick={() => addImportedImage(asset.id)}>
+            <button
+              key={asset.id}
+              type="button"
+              onClick={() => {
+                addImportedImage(asset.id);
+                trackClarityEvent('asset_added');
+              }}
+            >
               {asset.name}
             </button>
           ))}
@@ -325,7 +363,14 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
         <h2>Annotations</h2>
         <div className="toolbar-group">
           {annotationButtons.map((button) => (
-            <button key={button.kind} type="button" onClick={() => addAnnotation(button.kind)}>
+            <button
+              key={button.kind}
+              type="button"
+              onClick={() => {
+                addAnnotation(button.kind);
+                trackClarityEvent('asset_added');
+              }}
+            >
               {button.label}
             </button>
           ))}
