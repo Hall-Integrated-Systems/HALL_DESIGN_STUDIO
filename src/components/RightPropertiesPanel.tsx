@@ -249,7 +249,7 @@ export function RightPropertiesPanel({ className = '' }: { className?: string })
       ) : selectedObject.kind === 'mounting-helper' && selectedObject.mountingHelper ? (
         <MountingHelperPanel object={selectedObject} onUpdate={updateObject} onUpdateMaterial={updateObjectMaterial} />
       ) : (
-        <MaterialPanel object={selectedObject} onUpdateMaterial={updateObjectMaterial} />
+        <MaterialPanel object={selectedObject} onUpdate={updateObject} onUpdateMaterial={updateObjectMaterial} />
       )}
 
       <div className="object-actions">
@@ -551,8 +551,13 @@ function ImagePlanePanel({ object, onUpdate }: { object: StudioObject; onUpdate:
   const imagePlane = object.imagePlane;
   if (!imagePlane) return null;
 
+  const fillColor = object.appearance?.fillColor ?? imagePlane.tintColor;
+
   const updateImagePlane = (patch: Partial<typeof imagePlane>) => {
-    onUpdate(object.id, { imagePlane: { ...imagePlane, ...patch } });
+    onUpdate(object.id, {
+      imagePlane: { ...imagePlane, ...patch },
+      ...(patch.opacity === undefined ? {} : { material: { ...object.material, opacity: patch.opacity } }),
+    });
   };
 
   const setPreserveAspectRatio = (preserveAspectRatio: boolean) => {
@@ -563,9 +568,17 @@ function ImagePlanePanel({ object, onUpdate }: { object: StudioObject; onUpdate:
     });
   };
 
+  const updateFillColor = (nextFillColor: string) => {
+    onUpdate(object.id, {
+      appearance: { ...object.appearance, fillColor: nextFillColor },
+      imagePlane: { ...imagePlane, tintColor: nextFillColor },
+      material: { ...object.material, color: nextFillColor },
+    });
+  };
+
   return (
     <section className="panel-section">
-      <h3>Image Plane</h3>
+      <h3>{imagePlane.placeholder ? 'Label / Decal Appearance' : 'Image Plane'}</h3>
       <p className="list-empty">{imagePlane.fileName || (imagePlane.placeholder ? 'Built-in decal placeholder' : 'Image plane')}</p>
       <RangeField label="Opacity" value={imagePlane.opacity} onChange={(event) => updateImagePlane({ opacity: Number(event.target.value) })} />
       <label className="switch-field">
@@ -581,8 +594,8 @@ function ImagePlanePanel({ object, onUpdate }: { object: StudioObject; onUpdate:
         Preserve aspect ratio
       </label>
       <label className="field color-field">
-        <span>Tint</span>
-        <input type="color" value={imagePlane.tintColor} onChange={(event) => updateImagePlane({ tintColor: event.target.value })} />
+        <span>{imagePlane.placeholder ? 'Background / Fill Color' : 'Image Tint'}</span>
+        <input type="color" value={fillColor} onChange={(event) => updateFillColor(event.target.value)} />
       </label>
     </section>
   );
@@ -590,17 +603,49 @@ function ImagePlanePanel({ object, onUpdate }: { object: StudioObject; onUpdate:
 
 function MaterialPanel({
   object,
+  onUpdate,
   onUpdateMaterial,
 }: {
   object: StudioObject;
+  onUpdate: (id: string, patch: Partial<StudioObject>) => void;
   onUpdateMaterial: (id: string, material: Partial<StudioObject['material']>) => void;
 }) {
+  const isLabelTag = object.assetId === 'label-tag';
+  const fillColor = isLabelTag ? (object.appearance?.fillColor ?? object.material.color) : object.material.color;
+  const foregroundColor =
+    object.appearance?.foregroundColor ?? object.parts?.find((part) => part.id === 'stripe')?.material?.color ?? '#0057a8';
+
+  const updateMaterial = (patch: Partial<StudioObject['material']>) => {
+    if (!isLabelTag) {
+      onUpdateMaterial(object.id, patch);
+      return;
+    }
+
+    onUpdate(object.id, {
+      material: { ...object.material, ...patch },
+      appearance: {
+        ...object.appearance,
+        fillColor: patch.color ?? fillColor,
+        foregroundColor,
+      },
+    });
+  };
+
+  const updateForegroundColor = (nextForegroundColor: string) => {
+    onUpdate(object.id, {
+      appearance: { ...object.appearance, fillColor, foregroundColor: nextForegroundColor },
+      parts: object.parts?.map((part) =>
+        part.id === 'stripe' ? { ...part, material: { ...part.material, color: nextForegroundColor } } : part,
+      ),
+    });
+  };
+
   return (
     <section className="panel-section">
-      <h3>Material</h3>
+      <h3>{isLabelTag ? 'Label Appearance' : 'Material'}</h3>
       <div className="preset-grid color-preset-grid">
         {brandColorPresets.map((preset) => (
-          <button key={preset.id} type="button" title={preset.color} onClick={() => onUpdateMaterial(object.id, { color: preset.color })}>
+          <button key={preset.id} type="button" title={preset.color} onClick={() => updateMaterial({ color: preset.color })}>
             <span className="swatch" style={{ backgroundColor: preset.color }} />
             {preset.label}
           </button>
@@ -608,29 +653,35 @@ function MaterialPanel({
       </div>
       <div className="preset-grid">
         {materialPresets.map((preset) => (
-          <button key={preset.id} type="button" onClick={() => onUpdateMaterial(object.id, preset.material)}>
+          <button key={preset.id} type="button" onClick={() => updateMaterial(preset.material)}>
             {preset.label}
           </button>
         ))}
       </div>
       <label className="field color-field">
-        <span>Color</span>
-        <input type="color" value={object.material.color} onChange={(event) => onUpdateMaterial(object.id, { color: event.target.value })} />
+        <span>{isLabelTag ? 'Background / Fill Color' : 'Color'}</span>
+        <input type="color" value={fillColor} onChange={(event) => updateMaterial({ color: event.target.value })} />
       </label>
+      {isLabelTag && (
+        <label className="field color-field">
+          <span>Foreground / Accent Color</span>
+          <input type="color" value={foregroundColor} onChange={(event) => updateForegroundColor(event.target.value)} />
+        </label>
+      )}
       <RangeField
         label="Roughness"
         value={object.material.roughness}
-        onChange={(event) => onUpdateMaterial(object.id, { roughness: Number(event.target.value) })}
+        onChange={(event) => updateMaterial({ roughness: Number(event.target.value) })}
       />
       <RangeField
         label="Metalness"
         value={object.material.metalness}
-        onChange={(event) => onUpdateMaterial(object.id, { metalness: Number(event.target.value) })}
+        onChange={(event) => updateMaterial({ metalness: Number(event.target.value) })}
       />
       <RangeField
         label="Opacity"
         value={object.material.opacity}
-        onChange={(event) => onUpdateMaterial(object.id, { opacity: Number(event.target.value) })}
+        onChange={(event) => updateMaterial({ opacity: Number(event.target.value) })}
       />
     </section>
   );

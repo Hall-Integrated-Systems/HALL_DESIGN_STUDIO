@@ -86,6 +86,7 @@ export interface StudioObject {
   rotation: Vec3;
   scale: Vec3;
   material: StudioMaterial;
+  appearance?: LabelDecalAppearance;
   imagePlane?: ImagePlaneData;
   annotation?: AnnotationData;
   mountingHelper?: MountingHelperData;
@@ -93,6 +94,12 @@ export interface StudioObject {
   visible: boolean;
   modelDataUrl?: string;
   fileName?: string;
+}
+
+export interface LabelDecalAppearance {
+  fillColor: string;
+  foregroundColor?: string;
+  borderColor?: string;
 }
 
 export interface StudioGroup {

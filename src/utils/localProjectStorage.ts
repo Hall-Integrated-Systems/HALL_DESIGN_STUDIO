@@ -54,6 +54,7 @@ const cloneAssemblyObject = (object: StudioObject, origin: Vec3): StudioObject =
     Number((object.position[2] - origin[2]).toFixed(4)),
   ],
   material: { ...object.material },
+  appearance: object.appearance ? { ...object.appearance } : undefined,
   imagePlane: object.imagePlane ? { ...object.imagePlane } : undefined,
   annotation: object.annotation ? { ...object.annotation, start: [...object.annotation.start], end: [...object.annotation.end] } : undefined,
   mountingHelper: object.mountingHelper ? { ...object.mountingHelper, clearanceSize: [...object.mountingHelper.clearanceSize] } : undefined,

@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.8.4
+
+- Added right-panel fill/tint and opacity controls for built-in label and decal placeholder objects.
+- Added separate background/fill and foreground/accent color controls for Label Tag assets.
+- Added backward-compatible appearance defaults so older projects keep their current label/decal visuals while new appearance values persist through browser and JSON project save/load.
+
 ## v2.8.3
 
 - Added a desktop drag handle to resize the left Add sidebar, with browser-local width persistence and safe width bounds.

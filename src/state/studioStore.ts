@@ -215,18 +215,40 @@ const createBuiltInAssetObject = (assetId: string, existingObjects: StudioObject
     rotation: [0, 0, 0],
     scale: [1, 1, 1],
     material: { ...asset.material },
+    appearance: asset.appearance ? { ...asset.appearance } : undefined,
     locked: false,
     visible: true,
     parts: asset.parts.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
   };
 };
 
-const withObjectDefaults = (object: StudioObject): StudioObject => ({
-  ...object,
-  locked: object.locked ?? false,
-  visible: object.visible ?? true,
-  material: { ...DEFAULT_MATERIAL, ...object.material },
-  imagePlane: object.imagePlane
+const getAppearanceWithDefaults = (
+  object: StudioObject,
+  material: StudioObject['material'],
+  imagePlane: StudioObject['imagePlane'],
+): StudioObject['appearance'] => {
+  if (object.assetId === 'label-tag') {
+    return {
+      ...object.appearance,
+      fillColor: object.appearance?.fillColor ?? material.color,
+      foregroundColor:
+        object.appearance?.foregroundColor ?? object.parts?.find((part) => part.id === 'stripe')?.material?.color ?? '#0057a8',
+    };
+  }
+
+  if (imagePlane) {
+    return {
+      ...object.appearance,
+      fillColor: object.appearance?.fillColor ?? imagePlane.tintColor,
+    };
+  }
+
+  return object.appearance ? { ...object.appearance } : undefined;
+};
+
+const withObjectDefaults = (object: StudioObject): StudioObject => {
+  const material = { ...DEFAULT_MATERIAL, ...object.material };
+  const imagePlane = object.imagePlane
     ? {
         fileName: object.imagePlane.fileName,
         imageDataUrl: object.imagePlane.imageDataUrl,
@@ -238,8 +260,16 @@ const withObjectDefaults = (object: StudioObject): StudioObject => ({
         tintColor: object.imagePlane.tintColor ?? '#ffffff',
         placeholder: object.imagePlane.placeholder ?? false,
       }
-    : undefined,
-  annotation: object.annotation
+    : undefined;
+
+  return {
+    ...object,
+    locked: object.locked ?? false,
+    visible: object.visible ?? true,
+    material,
+    appearance: getAppearanceWithDefaults(object, material, imagePlane),
+    imagePlane,
+    annotation: object.annotation
     ? {
         kind: object.annotation.kind ?? 'text-label',
         text: object.annotation.text ?? 'Label',
@@ -254,8 +284,8 @@ const withObjectDefaults = (object: StudioObject): StudioObject => ({
         arrowAngle: object.annotation.arrowAngle ?? 0,
         autoLength: object.annotation.autoLength ?? true,
       }
-    : undefined,
-  mountingHelper: object.mountingHelper
+      : undefined,
+    mountingHelper: object.mountingHelper
     ? {
         kind: object.mountingHelper.kind ?? 'round-hole',
         diameter: object.mountingHelper.diameter ?? 0.42,
@@ -264,9 +294,10 @@ const withObjectDefaults = (object: StudioObject): StudioObject => ({
         standoffHeight: object.mountingHelper.standoffHeight ?? 0.65,
         clearanceSize: object.mountingHelper.clearanceSize ?? [1.4, 0.05, 1.1],
       }
-    : undefined,
-  parts: object.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
-});
+      : undefined,
+    parts: object.parts?.map((part) => ({ ...part, material: part.material ? { ...part.material } : undefined })),
+  };
+};
 
 const cloneObject = (object: StudioObject, name: string, settings: StudioSettings): StudioObject => ({
   ...object,
@@ -274,6 +305,7 @@ const cloneObject = (object: StudioObject, name: string, settings: StudioSetting
   name,
   position: getDuplicatePosition(object.position, settings),
   material: { ...object.material },
+  appearance: object.appearance ? { ...object.appearance } : undefined,
   imagePlane: object.imagePlane ? { ...object.imagePlane } : undefined,
   annotation: object.annotation ? { ...object.annotation } : undefined,
   mountingHelper: object.mountingHelper ? { ...object.mountingHelper, clearanceSize: [...object.mountingHelper.clearanceSize] } : undefined,
@@ -286,6 +318,7 @@ const cloneObjectAtPosition = (object: StudioObject, id: string, name: string, p
   name,
   position,
   material: { ...object.material },
+  appearance: object.appearance ? { ...object.appearance } : undefined,
   imagePlane: object.imagePlane ? { ...object.imagePlane } : undefined,
   annotation: object.annotation ? { ...object.annotation, start: [...object.annotation.start], end: [...object.annotation.end] } : undefined,
   mountingHelper: object.mountingHelper ? { ...object.mountingHelper, clearanceSize: [...object.mountingHelper.clearanceSize] } : undefined,
@@ -480,6 +513,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       rotation: [0, 0, 0],
       scale: [aspect, 1, 1],
       material: { ...DEFAULT_IMAGE_MATERIAL },
+      appearance: { fillColor: '#ffffff' },
       imagePlane: {
         imageDataUrl,
         fileName,
@@ -587,6 +621,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       rotation: [0, 0, 0],
       scale: [asset.aspectRatio, 1, 1],
       material: { ...DEFAULT_IMAGE_MATERIAL, color: asset.tintColor, opacity: asset.opacity },
+      appearance: { fillColor: asset.tintColor },
       imagePlane: {
         width: Math.round(asset.aspectRatio * 1000),
         height: 1000,
@@ -640,6 +675,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       rotation: [0, 0, 0],
       scale: [aspect, 1, 1],
       material: { ...DEFAULT_IMAGE_MATERIAL },
+      appearance: { fillColor: '#ffffff' },
       imagePlane: {
         imageDataUrl: asset.imageDataUrl,
         fileName: asset.fileName,

@@ -605,14 +605,14 @@ function ImagePlane({ object, shadowsEnabled }: { object: StudioObject; shadowsE
 
   if (!imagePlane) return null;
   if (imagePlane.imageDataUrl) {
-    return <TexturedImagePlane imagePlane={imagePlane} shadowsEnabled={shadowsEnabled} />;
+    return <TexturedImagePlane object={object} shadowsEnabled={shadowsEnabled} />;
   }
 
   return (
     <mesh castShadow={shadowsEnabled} receiveShadow={shadowsEnabled}>
       <planeGeometry args={[1, 1]} />
       <meshBasicMaterial
-        color={imagePlane.tintColor}
+        color={object.appearance?.fillColor ?? imagePlane.tintColor}
         opacity={imagePlane.opacity}
         transparent={imagePlane.opacity < 1}
         side={imagePlane.doubleSided ? DoubleSide : FrontSide}
@@ -621,7 +621,8 @@ function ImagePlane({ object, shadowsEnabled }: { object: StudioObject; shadowsE
   );
 }
 
-function TexturedImagePlane({ imagePlane, shadowsEnabled }: { imagePlane: NonNullable<StudioObject['imagePlane']>; shadowsEnabled: boolean }) {
+function TexturedImagePlane({ object, shadowsEnabled }: { object: StudioObject; shadowsEnabled: boolean }) {
+  const imagePlane = object.imagePlane!;
   const texture = useLoader(TextureLoader, imagePlane.imageDataUrl!);
 
   return (
@@ -629,7 +630,7 @@ function TexturedImagePlane({ imagePlane, shadowsEnabled }: { imagePlane: NonNul
       <planeGeometry args={[1, 1]} />
       <meshBasicMaterial
         map={texture}
-        color={imagePlane.tintColor}
+        color={object.appearance?.fillColor ?? imagePlane.tintColor}
         opacity={imagePlane.opacity}
         transparent
         side={imagePlane.doubleSided ? DoubleSide : FrontSide}
@@ -643,7 +644,19 @@ function AssetGroup({ object, shadowsEnabled }: { object: StudioObject; shadowsE
   return (
     <>
       {object.parts?.map((part) => (
-        <AssetPart key={part.id} part={part} parentMaterial={object.material} shadowsEnabled={shadowsEnabled} />
+        <AssetPart
+          key={part.id}
+          part={part}
+          parentMaterial={object.material}
+          colorOverride={
+            object.assetId === 'label-tag'
+              ? part.id === 'stripe'
+                ? object.appearance?.foregroundColor
+                : object.appearance?.fillColor
+              : undefined
+          }
+          shadowsEnabled={shadowsEnabled}
+        />
       ))}
     </>
   );
@@ -652,13 +665,15 @@ function AssetGroup({ object, shadowsEnabled }: { object: StudioObject; shadowsE
 function AssetPart({
   part,
   parentMaterial,
+  colorOverride,
   shadowsEnabled,
 }: {
   part: StudioAssetPart;
   parentMaterial: StudioMaterial;
+  colorOverride?: string;
   shadowsEnabled: boolean;
 }) {
-  const material = { ...parentMaterial, ...part.material };
+  const material = { ...parentMaterial, ...part.material, ...(colorOverride ? { color: colorOverride } : {}) };
 
   return (
     <mesh position={part.position} rotation={part.rotation} scale={part.scale} castShadow={shadowsEnabled} receiveShadow={shadowsEnabled}>

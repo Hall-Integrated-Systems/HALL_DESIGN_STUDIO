@@ -45,6 +45,7 @@ npm run build
 - GLB/GLTF import with friendlier import errors
 - Image planes and decals for PNG, JPG/JPEG, and WEBP
 - Transparent PNG logo/label support
+- Editable fill/tint, foreground accent, and opacity controls for built-in label and decal placeholders
 - Annotation objects: text labels, arrows, dimension lines, and marker dots
 - Mounting Helpers for visual hole, slot, washer, rivnut, standoff, bolt-head, centerline, and clearance planning
 - Object selection, transform controls, duplicate, delete, lock, and visibility

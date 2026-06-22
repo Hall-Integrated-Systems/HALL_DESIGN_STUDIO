@@ -1,10 +1,11 @@
-import type { AssetCategory, StudioAssetPart, StudioMaterial, Vec3 } from '../types/studioTypes';
+import type { AssetCategory, LabelDecalAppearance, StudioAssetPart, StudioMaterial, Vec3 } from '../types/studioTypes';
 
 export interface BuiltInAssetDefinition {
   id: string;
   name: string;
   category: AssetCategory;
   material: StudioMaterial;
+  appearance?: LabelDecalAppearance;
   parts: StudioAssetPart[];
 }
 
@@ -130,6 +131,7 @@ export const builtInAssets: BuiltInAssetDefinition[] = [
     name: 'Label Tag',
     category: 'Background Props',
     material: material('#f7f9fb', 0.72, 0),
+    appearance: { fillColor: '#f7f9fb', foregroundColor: '#0057a8' },
     parts: [
       part('tag', 'cube', [0, 0.24, 0], [1.2, 0.48, 0.035]),
       part('stripe', 'cube', [0, 0.36, 0.03], [0.98, 0.07, 0.02], [0, 0, 0], { color: '#0057a8' }),
