@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ChangeEvent, PointerEvent } from 'react';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useStudioStore } from '../state/studioStore';
-import type { AnnotationKind, CustomAssembly, PrimitiveKind } from '../types/studioTypes';
+import type { AnnotationKind, CustomAssembly, MountingHelperKind, PrimitiveKind } from '../types/studioTypes';
 import { assetCategories, builtInAssets, imageDecalAssets } from '../config/assets';
 import { mountingHelpers } from '../config/mountingHelpers';
 import { CUSTOM_ASSEMBLIES_CHANGED_EVENT, deleteCustomAssembly, listCustomAssemblies } from '../utils/localProjectStorage';
 import { trackClarityEvent } from '../utils/clarity';
+import type { StudioGoalId } from './StudioWelcome';
 
 const primitiveButtons: Array<{ kind: PrimitiveKind; label: string }> = [
   { kind: 'cube', label: 'Cube' },
@@ -21,6 +22,52 @@ const annotationButtons: Array<{ kind: AnnotationKind; label: string }> = [
   { kind: 'dimension-line', label: 'Dimension Line' },
   { kind: 'marker-dot', label: 'Marker / Dot' },
 ];
+
+type GoalShortcut =
+  | { label: string; action: 'import-model' | 'import-image' }
+  | { label: string; action: 'asset' | 'decal'; id: string }
+  | { label: string; action: 'annotation'; kind: AnnotationKind }
+  | { label: string; action: 'helper'; kind: MountingHelperKind }
+  | { label: string; action: 'primitive'; kind: PrimitiveKind };
+
+const goalShortcuts: Record<Exclude<StudioGoalId, 'part'>, { title: string; description: string; actions: GoalShortcut[] }> = {
+  product: {
+    title: 'Show a product',
+    description: 'Place your product, add a display detail, then frame it for export.',
+    actions: [
+      { label: 'Import product model', action: 'import-model' },
+      { label: 'Add display stand', action: 'asset', id: 'simple-display-stand' },
+      { label: 'Add product tag', action: 'decal', id: 'product-tag' },
+    ],
+  },
+  brand: {
+    title: 'Create a brand visual',
+    description: 'Bring in a logo or image, then add a label or brand element.',
+    actions: [
+      { label: 'Import logo or image', action: 'import-image' },
+      { label: 'Add H logo placeholder', action: 'asset', id: 'h-logo-placeholder' },
+      { label: 'Add text label', action: 'annotation', kind: 'text-label' },
+    ],
+  },
+  concept: {
+    title: 'Plan an installation',
+    description: 'Add visual hardware markers to communicate your layout.',
+    actions: [
+      { label: 'Add L bracket', action: 'asset', id: 'l-bracket' },
+      { label: 'Add round hole marker', action: 'helper', kind: 'round-hole' },
+      { label: 'Add clearance zone', action: 'helper', kind: 'clearance-zone' },
+    ],
+  },
+  explore: {
+    title: 'Explore freely',
+    description: 'Start with a shape or bring in a model or image.',
+    actions: [
+      { label: 'Add cube', action: 'primitive', kind: 'cube' },
+      { label: 'Import model', action: 'import-model' },
+      { label: 'Import image', action: 'import-image' },
+    ],
+  },
+};
 
 const supportedModelTypes = ['glb', 'gltf'];
 const supportedImageTypes = ['png', 'jpg', 'jpeg', 'webp'];
@@ -75,7 +122,15 @@ const getCustomAssemblyTitle = (assembly: Partial<CustomAssembly>) => {
   return [assemblyName, `${objectCount} ${objectLabel}`, dateLabel ? `Saved ${dateLabel}` : null].filter(Boolean).join('\n');
 };
 
-export function LeftToolbar({ className = '' }: { className?: string }) {
+interface LeftToolbarProps {
+  className?: string;
+  goal: Exclude<StudioGoalId, 'part'> | null;
+  showGoalShortcuts: boolean;
+  onDismissGoalShortcuts: () => void;
+  onChangeGoal: () => void;
+}
+
+export function LeftToolbar({ className = '', goal, showGoalShortcuts, onDismissGoalShortcuts, onChangeGoal }: LeftToolbarProps) {
   const importInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [customAssemblies, setCustomAssemblies] = useState<CustomAssembly[]>([]);
@@ -151,6 +206,32 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
     trackClarityEvent('asset_added');
     if (asset.category === 'Product Parts') {
       trackClarityEvent('product_added');
+    }
+  };
+
+  const handleAddMountingHelper = (kind: MountingHelperKind) => {
+    const helper = mountingHelpers.find((item) => item.kind === kind);
+    if (!helper) return;
+    addMountingHelper(kind);
+    trackClarityEvent('asset_added');
+    pushToast(`${helper.baseName} added.`, 'success');
+  };
+
+  const handleGoalShortcut = (shortcut: GoalShortcut) => {
+    switch (shortcut.action) {
+      case 'import-model': importInputRef.current?.click(); break;
+      case 'import-image': imageInputRef.current?.click(); break;
+      case 'asset': handleAddBuiltInAsset(shortcut.id); break;
+      case 'decal':
+        addImageDecalAsset(shortcut.id);
+        trackClarityEvent('asset_added');
+        break;
+      case 'annotation':
+        addAnnotation(shortcut.kind);
+        trackClarityEvent('asset_added');
+        break;
+      case 'helper': handleAddMountingHelper(shortcut.kind); break;
+      case 'primitive': handleAddPrimitive(shortcut.kind, shortcut.label.replace(/^Add /, '')); break;
     }
   };
 
@@ -232,6 +313,13 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
       style={{ '--left-toolbar-width': `${leftToolbarWidth}px` } as CSSProperties}
       aria-label="Add objects"
     >
+      {goal && showGoalShortcuts && <section className="toolbar-section goal-shortcuts" aria-label={`Start here: ${goalShortcuts[goal].title}`}>
+        <div className="goal-shortcuts-top"><span>START HERE / YOUR GOAL</span><button type="button" onClick={onDismissGoalShortcuts} aria-label="Hide goal shortcuts">×</button></div>
+        <h2>{goalShortcuts[goal].title}</h2>
+        <p>{goalShortcuts[goal].description}</p>
+        <div className="toolbar-group">{goalShortcuts[goal].actions.map((shortcut) => <button type="button" key={shortcut.label} onClick={() => handleGoalShortcut(shortcut)}>{shortcut.label}</button>)}</div>
+        <button type="button" className="goal-shortcuts-change" onClick={onChangeGoal}>Change goal ↗</button>
+      </section>}
       <section className="toolbar-section simple-shapes-section">
         <h2>Simple Shapes</h2>
         <div className="toolbar-group shape-button-grid">
@@ -314,11 +402,7 @@ export function LeftToolbar({ className = '' }: { className?: string }) {
             <button
               key={helper.kind}
               type="button"
-              onClick={() => {
-                addMountingHelper(helper.kind);
-                trackClarityEvent('asset_added');
-                pushToast(`${helper.baseName} added.`, 'success');
-              }}
+              onClick={() => handleAddMountingHelper(helper.kind)}
             >
               {helper.label}
             </button>

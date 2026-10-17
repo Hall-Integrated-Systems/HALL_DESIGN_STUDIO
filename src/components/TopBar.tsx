@@ -51,9 +51,13 @@ export type TopMenuId = 'templates' | 'scene' | 'camera' | 'view' | 'export' | '
 export function TopBar({
   openMenu,
   setOpenMenu,
+  guideOpen,
+  onOpenGoals,
 }: {
   openMenu: TopMenuId | null;
   setOpenMenu: (menu: TopMenuId | null) => void;
+  guideOpen: boolean;
+  onOpenGoals: () => void;
 }) {
   const loadInputRef = useRef<HTMLInputElement>(null);
   const menuRefs = useRef<Partial<Record<TopMenuId, HTMLDivElement | null>>>({});
@@ -174,6 +178,7 @@ export function TopBar({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (guideOpen) return;
       if (event.key === 'Escape' && openMenu) {
         event.preventDefault();
         setOpenMenu(null);
@@ -382,6 +387,7 @@ export function TopBar({
       <TransformToolbar className="header-transform-toolbar" />
 
       <div className="top-actions">
+        <button type="button" className="studio-goals-trigger" onClick={onOpenGoals}>Goals</button>
         <TemplatePicker
           menuId="templates"
           openMenu={openMenu}
