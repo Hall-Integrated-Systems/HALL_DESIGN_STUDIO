@@ -50,3 +50,8 @@ The renderer is real-time Three.js, not an offline product renderer. Current lim
 Production builds currently emit a large chunk warning because Three.js, React Three Fiber, Drei, and related rendering utilities are bundled into the app. This warning is expected for the current architecture and does not indicate a failed build.
 
 Future optimization could split vendor chunks or lazy-load heavier rendering/import paths, but that is outside the v2.0 hardening scope.
+
+
+## Spacer Ring Lab Photo Estimates
+
+The separate Spacer Ring Lab generates dimension-based ring geometry. Its photo tool provides provisional pixel-ratio estimates. The selection/reference interval does not quantify perspective, depth mismatch, or lens distortion, and passing mesh/export checks does not verify photo accuracy or physical fit. Confirm manufacturing dimensions with suitable direct measurements. See [photo reliability, reproducible experiments, and caliper verification](PHOTO_MEASUREMENT_RELIABILITY.md).

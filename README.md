@@ -163,6 +163,7 @@ The app is built with Vite and deployed as static files through Azure Static Web
 - [Deployment](docs/DEPLOYMENT.md)
 - [QA Checklist](docs/QA_CHECKLIST.md)
 - [Limitations](docs/LIMITATIONS.md)
+- [Spacer Ring Lab photo reliability and caliper verification](docs/PHOTO_MEASUREMENT_RELIABILITY.md)
 
 ## Important Notes
 
