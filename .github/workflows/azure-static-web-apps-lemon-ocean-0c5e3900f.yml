@@ -1,6 +1,12 @@
 name: Azure Static Web Apps CI/CD
 
 on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Full commit SHA to validate; must match the selected branch head
+        required: true
+        type: string
   push:
     branches:
       - main
@@ -10,6 +16,51 @@ on:
       - main
 
 jobs:
+  # Manual validation never enters either Azure job below.
+  validate_only_job:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    name: Validate only (no deployment)
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify requested revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+             [[ "$EXPECTED_SHA" != "$GITHUB_SHA" ]] ||
+             [[ "$(git rev-parse HEAD)" != "$EXPECTED_SHA" ]]; then
+            echo "::error::Requested SHA does not match this run. Dispatch again with the current branch head."
+            exit 1
+          fi
+          printf 'Validating commit %s without deployment\n' "$EXPECTED_SHA"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Test Spacer Ring Lab
+        run: npm test --prefix experiments/spacer-ring
+
+      - name: Build Spacer Ring Lab
+        run: npm run build --prefix experiments/spacer-ring
+
+      - name: Build integrated Studio
+        run: npm run build
+
   build_and_deploy_job:
     if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed') }}
     runs-on: ubuntu-latest
