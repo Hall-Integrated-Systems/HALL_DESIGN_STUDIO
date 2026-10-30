@@ -37,9 +37,9 @@ const goals: StudioGoal[] = [
     templates: ['bracket-mount-concept', 'product-base-display', 'workbench-review-scene'],
   },
   {
-    id: 'part', number: '04', title: 'Make an installation part',
-    description: 'Create dimensioned geometry for a part you can inspect and print.',
-    detail: 'Choose a part, enter its measurements, then validate and download geometry for review in your CAD and slicer tools.',
+    id: 'part', number: '04', title: 'Make a spacer ring',
+    description: 'Create dimensioned spacer ring geometry for inspection and slicing.',
+    detail: 'Enter measured dimensions, generate and validate the ring mesh, then download STL or 3MF for review. Verify dimensions and fit with a physical test print.',
     steps: ['Choose a part', 'Enter dimensions', 'Validate and download'],
     templates: [],
   },
@@ -84,7 +84,7 @@ export function StudioWelcome({ goal, projectTitle, pendingTemplateId, onChooseG
         <div className="studio-goal-heading"><span className="studio-guide-kicker">YOUR GOAL / {selectedGoal.number}</span><h1>{selectedGoal.title}</h1><p>{selectedGoal.detail}</p></div>
         <div className="studio-goal-steps" aria-label="Suggested workflow">{selectedGoal.steps.map((step, index) => <span key={step}><b>{String(index + 1).padStart(2, '0')}</b>{step}</span>)}</div>
         {selectedGoal.id === 'part' ? <>
-          <div className="studio-template-heading"><div><span className="studio-guide-kicker">PRINTABLE PARTS</span><h2>Choose a part to make</h2></div><p>The Geometry Lab opens in a new tab on this site, leaving your current Studio scene open.</p></div>
+          <div className="studio-template-heading"><div><span className="studio-guide-kicker">PRINTABLE PARTS</span><h2>Choose a part to make</h2></div><p>The Spacer Ring Lab opens in a new tab, leaving your current Studio scene open. Mesh validation does not verify physical fit or material suitability.</p></div>
           <div className="studio-template-grid"><a className="studio-template-card" href="spacer-ring/#design" target="_blank" rel="noopener noreferrer">
             <span className="studio-template-top"><span>AVAILABLE NOW</span><span aria-hidden="true">↗</span></span>
             <strong>Spacer ring</strong><span className="studio-template-description">Set outside diameter, opening diameter, and thickness in millimeters.</span>
@@ -104,8 +104,11 @@ export function StudioWelcome({ goal, projectTitle, pendingTemplateId, onChooseG
         </>}
         <p className="studio-guide-current">Current workspace: <strong>{projectTitle}</strong>. Opening it keeps the scene as it is.</p>
       </> : <>
-        <div className="studio-guide-hero"><div><span className="studio-guide-kicker">A BETTER PLACE TO BEGIN</span><h1>What do you want to create?</h1><p>Tell us the goal. We’ll show you the right starting scenes and tools for it.</p><span className="studio-guide-prompt">Select a direction below ↓</span></div><div className="studio-guide-visual" aria-hidden="true"><div className="studio-guide-visual-grid" /><div className="studio-guide-visual-object"><span /></div><span className="studio-guide-visual-label">IDEA / SCENE / IMAGE</span></div></div>
-        <div className="studio-goal-grid">{goals.map((item) => <button type="button" className="studio-goal-card" key={item.id} onClick={() => onChooseGoal(item.id)}><span className="studio-goal-number">{item.number}</span><strong>{item.title}</strong><span>{item.description}</span><span className="studio-goal-card-action">Explore options <b aria-hidden="true">↗</b></span></button>)}</div>
+        <div className="studio-guide-hero"><div><span className="studio-guide-kicker">DESIGN / VALIDATE / EXPORT</span><h1>Create a 3D-printable part</h1><p>Start with a supported parametric design. Enter dimensions, check the generated mesh, and export it for review and slicing.</p><span className="studio-guide-prompt">AVAILABLE NOW ↓</span></div><div className="studio-guide-visual" aria-hidden="true"><div className="studio-guide-visual-grid" /><div className="studio-guide-visual-object"><span /></div><span className="studio-guide-visual-label">MEASURE / DESIGN / PRINT</span></div></div>
+        <div className="studio-template-grid"><a className="studio-template-card" href="spacer-ring/#design" target="_blank" rel="noopener noreferrer"><span className="studio-template-top"><span>AVAILABLE NOW</span><span aria-hidden="true">↗</span></span><strong>Spacer ring</strong><span className="studio-template-description">Enter outside diameter, opening diameter and thickness. Generate and validate the mesh, then export STL or 3MF.</span><span className="studio-template-use">OPEN SPACER RING LAB</span></a></div>
+        <p className="studio-guide-current">Verify dimensions, material and fit with a physical test print. Brackets, adapters and enclosures are not yet available as printable generators.</p>
+        <div className="studio-template-heading"><div><span className="studio-guide-kicker">SECONDARY WORKSPACE</span><h2>Visualization workspace</h2></div><p>Stage product images, brand visuals and installation concepts. These scenes do not create printable geometry.</p></div>
+        <div className="studio-goal-grid">{goals.filter((item) => item.id !== 'part').map((item) => <button type="button" className="studio-goal-card" key={item.id} onClick={() => onChooseGoal(item.id)}><span className="studio-goal-number">{item.number}</span><strong>{item.title}</strong><span>{item.description}</span><span className="studio-goal-card-action">Explore options <b aria-hidden="true">↗</b></span></button>)}</div>
         <p className="studio-guide-current">Already working on <strong>{projectTitle}</strong>? Open the current workspace above.</p>
       </>}
     </div>
