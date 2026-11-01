@@ -12,6 +12,7 @@ import { RingGuidance } from './RingGuidance.tsx';
 import type { RingUse } from './RingGuidance.tsx';
 import { formatMeasurement, fromMillimeters, ringBuildSize, toMillimeters } from './unitsAndSize.ts';
 import type { MeasurementUnit } from './unitsAndSize.ts';
+import PlateDesigner from './PlateDesigner.tsx';
 
 const Preview = lazy(() => import('./Preview.tsx'));
 const DEMO_NAME = 'HIS Spacer Ring Demo';
@@ -38,15 +39,16 @@ export function withoutPhotoNote(note: string | undefined): string | undefined {
   if (!note) return undefined;
   return note.split('\n').filter(line => !photoFieldFromNote(line)).join('\n') || undefined;
 }
-type LabPage = 'start' | 'design' | 'measure' | 'inspect';
+type LabPage = 'start' | 'design' | 'measure' | 'inspect' | 'plate';
 const labGoals: Array<{ id: Exclude<LabPage, 'start'>; number: string; title: string; description: string; action: string }> = [
   { id: 'design', number: '01', title: 'Create a spacer ring', description: 'Set precise dimensions, inspect the 3D model, and download checked geometry.', action: 'Open ring designer' },
   { id: 'measure', number: '02', title: 'Measure from a photo', description: 'Use a known reference to propose a dimension before building the ring.', action: 'Open photo tool' },
   { id: 'inspect', number: '03', title: 'Check a printed part', description: 'Record caliper readings and fit decisions beside the nominal design.', action: 'Open inspection' },
+  { id: 'plate', number: '04', title: 'Make a speaker mounting plate', description: 'Connect a round speaker to a round factory opening using two screw patterns.', action: 'Open plate designer' },
 ];
 function pageFromLocation(): LabPage {
   const hash = window.location.hash.slice(1);
-  return hash === 'design' || hash === 'measure' || hash === 'inspect' ? hash : 'start';
+  return hash === 'design' || hash === 'measure' || hash === 'inspect' || hash === 'plate' ? hash : 'start';
 }
 
 export default function App({ studioHref }: { studioHref?: string }) {
@@ -199,7 +201,7 @@ export default function App({ studioHref }: { studioHref?: string }) {
   return <main>
     <header><div>{studioHref && <a className="lab-studio-link" href={studioHref}>← Hall Design Studio</a>}<h1>Spacer Ring Lab</h1><p>Hall Integrated Systems · From first dimensions to printed-part inspection</p></div><span className="experiment">{studioHref ? 'Geometry Lab' : 'Isolated experiment'}</span></header>
     {page === 'start' ? <section className="lab-start" aria-labelledby="lab-question">
-      <div className="lab-intro"><span className="lab-kicker">GEOMETRY LAB / GET STARTED</span><h2 id="lab-question">What would you like to do?</h2><p>Choose your goal. We’ll bring forward the tools and next steps that fit it.</p><span className="lab-intro-line">One ring. Three ways to move it forward.</span></div>
+      <div className="lab-intro"><span className="lab-kicker">GEOMETRY LAB / GET STARTED</span><h2 id="lab-question">What would you like to do?</h2><p>Choose your goal. We’ll bring forward the tools and next steps that fit it.</p><span className="lab-intro-line">From measurements to a design you can inspect.</span></div>
       <div className="lab-art" aria-hidden="true"><div className="lab-art-ring"><span /></div><div className="lab-art-caption">OD / ID / H <span>→</span> MODEL <span>→</span> PART</div></div>
       <div className="lab-goals">{labGoals.map(goal => <button type="button" className="lab-goal" key={goal.id} onClick={() => openPage(goal.id)}><span className="lab-goal-number">{goal.number}</span><span className="lab-goal-title">{goal.title}</span><span className="lab-goal-description">{goal.description}</span><span className="lab-goal-action">{goal.action} <span aria-hidden="true">↗</span></span></button>)}</div>
     </section> : <>
@@ -280,6 +282,7 @@ export default function App({ studioHref }: { studioHref?: string }) {
     </div>
     </div>
     <div className="lab-page" hidden={page !== 'measure'}><div className="lab-page-heading"><span className="lab-kicker">02 / MEASURE</span><h2>Start with a photo</h2><p>Mark a known reference and the dimension you want. Review the proposal, then move it into the ring designer.</p></div><PhotoMeasurePanel onUseEstimate={usePhotoEstimate} /></div>
+    <div className="lab-page" hidden={page !== 'plate'}><PlateDesigner /></div>
     <div className="lab-page" hidden={page !== 'inspect'}><div className="lab-page-heading"><span className="lab-kicker">03 / INSPECT</span><h2>Compare the print with the design</h2><p>Load the matching ring project or a prior inspection, then record your physical readings and fit decision.</p></div><div className="lab-inspection-context"><div><strong>Current nominal project</strong><p>{artifact ? `${workflow.project.name} · Ø${f(workflow.project.dimensions.outerDiameterMm)} / Ø${f(workflow.project.dimensions.innerDiameterMm)} / ${f(workflow.project.dimensions.thicknessMm)} mm${origin === 'demo' ? ' · demo dimensions' : ''}` : 'No validated ring is available. Load a project or generate a ring first.'}</p></div><button type="button" onClick={() => fileInput.current?.click()}>Load matching ring project</button></div><InspectionPanel source={artifact ? workflow.project : null} /></div>
     <input ref={fileInput} className="file-input" type="file" accept=".his-ring.json,application/json" aria-label="Choose dimension project JSON" onChange={loadProject} />
   </main>;
