@@ -38,8 +38,8 @@ const goals: StudioGoal[] = [
   },
   {
     id: 'part', number: '04', title: 'Make an installation part',
-    description: 'Create dimensioned geometry for a part you can inspect and print.',
-    detail: 'Choose a part, enter its measurements, then validate and download geometry for review in your CAD and slicer tools.',
+    description: 'Create a spacer ring or a speaker mounting plate.',
+    detail: 'Choose a part and we’ll help you enter the measurements. Review the design and check the fit with your actual parts.',
     steps: ['Choose a part', 'Enter dimensions', 'Validate and download'],
     templates: [],
   },
@@ -68,6 +68,13 @@ interface Props {
   onConfirmTemplate: () => void;
 }
 
+function PartChoices() {
+  return <div className="studio-template-grid studio-part-choices">
+    <a className="studio-template-card" href="spacer-ring/#design" target="_blank" rel="noopener noreferrer"><strong>Spacer ring</strong><span className="studio-template-description">Add space around an opening. Start with your outside diameter, opening and thickness.</span><span className="studio-template-use">START A SPACER RING ↗</span></a>
+    <a className="studio-template-card" href="spacer-ring/#plate" target="_blank" rel="noopener noreferrer"><strong>Speaker mounting plate</strong><span className="studio-template-description">Design a round speaker mounting plate with separate speaker and vehicle screw patterns.</span><span className="studio-template-use">START A MOUNTING PLATE ↗</span></a>
+  </div>;
+}
+
 export function StudioWelcome({ goal, projectTitle, pendingTemplateId, onChooseGoal, onBack, onOpenWorkspace, onStartTemplate, onCancelTemplate, onConfirmTemplate }: Props) {
   const selectedGoal = goals.find((item) => item.id === goal);
   const pendingTemplate = projectTemplates.find((item) => item.id === pendingTemplateId);
@@ -84,12 +91,8 @@ export function StudioWelcome({ goal, projectTitle, pendingTemplateId, onChooseG
         <div className="studio-goal-heading"><span className="studio-guide-kicker">YOUR GOAL / {selectedGoal.number}</span><h1>{selectedGoal.title}</h1><p>{selectedGoal.detail}</p></div>
         <div className="studio-goal-steps" aria-label="Suggested workflow">{selectedGoal.steps.map((step, index) => <span key={step}><b>{String(index + 1).padStart(2, '0')}</b>{step}</span>)}</div>
         {selectedGoal.id === 'part' ? <>
-          <div className="studio-template-heading"><div><span className="studio-guide-kicker">PRINTABLE PARTS</span><h2>Choose a part to make</h2></div><p>The Geometry Lab opens in a new tab on this site, leaving your current Studio scene open.</p></div>
-          <div className="studio-template-grid"><a className="studio-template-card" href="spacer-ring/#design" target="_blank" rel="noopener noreferrer">
-            <span className="studio-template-top"><span>AVAILABLE NOW</span><span aria-hidden="true">↗</span></span>
-            <strong>Spacer ring</strong><span className="studio-template-description">Set outside diameter, opening diameter, and thickness in millimeters.</span>
-            <span className="studio-template-use">VALIDATED STL + 3MF GEOMETRY</span>
-          </a></div>
+          <div className="studio-template-heading"><div><span className="studio-guide-kicker">INSTALLATION PARTS</span><h2>Choose a part to make</h2></div><p>Your current workspace stays open. Check the design and fit with your actual parts.</p></div>
+          <PartChoices />
         </> : <>
         <div className="studio-template-heading"><div><span className="studio-guide-kicker">RECOMMENDED STARTS</span><h2>Choose a workspace built for this goal</h2></div><p>Each option opens the Studio with matching scene and export settings. You can change everything afterward.</p></div>
         <div className="studio-template-grid">{selectedGoal.templates.map((id, index) => {
@@ -104,8 +107,10 @@ export function StudioWelcome({ goal, projectTitle, pendingTemplateId, onChooseG
         </>}
         <p className="studio-guide-current">Current workspace: <strong>{projectTitle}</strong>. Opening it keeps the scene as it is.</p>
       </> : <>
-        <div className="studio-guide-hero"><div><span className="studio-guide-kicker">A BETTER PLACE TO BEGIN</span><h1>What do you want to create?</h1><p>Tell us the goal. We’ll show you the right starting scenes and tools for it.</p><span className="studio-guide-prompt">Select a direction below ↓</span></div><div className="studio-guide-visual" aria-hidden="true"><div className="studio-guide-visual-grid" /><div className="studio-guide-visual-object"><span /></div><span className="studio-guide-visual-label">IDEA / SCENE / IMAGE</span></div></div>
-        <div className="studio-goal-grid">{goals.map((item) => <button type="button" className="studio-goal-card" key={item.id} onClick={() => onChooseGoal(item.id)}><span className="studio-goal-number">{item.number}</span><strong>{item.title}</strong><span>{item.description}</span><span className="studio-goal-card-action">Explore options <b aria-hidden="true">↗</b></span></button>)}</div>
+        <div className="studio-guide-hero"><div><h1>Create a 3D-printable part</h1><p>Have an installation in mind? Choose a part below and we’ll help you bring your measurements to life.</p></div><div className="studio-guide-visual" aria-hidden="true"><div className="studio-guide-visual-grid" /><div className="studio-guide-visual-object"><span /></div><span className="studio-guide-visual-label">MEASURE / DESIGN / PRINT</span></div></div>
+        <PartChoices />
+        <p className="studio-guide-current">Check your measurements and fit with the actual speaker, vehicle and a physical test print.</p>
+        <details className="studio-visualization"><summary><span>Visualization workspace</span><small>Create product images and installation concepts</small></summary><p className="studio-guide-current">These scenes help you visualize ideas; they do not create printable geometry.</p><div className="studio-goal-grid">{goals.filter((item) => item.id !== 'part' && item.id !== 'brand').map((item) => <button type="button" className="studio-goal-card" key={item.id} onClick={() => onChooseGoal(item.id)}><span className="studio-goal-number">{item.number}</span><strong>{item.title}</strong><span>{item.description}</span><span className="studio-goal-card-action">Explore options <b aria-hidden="true">↗</b></span></button>)}</div></details>
         <p className="studio-guide-current">Already working on <strong>{projectTitle}</strong>? Open the current workspace above.</p>
       </>}
     </div>
