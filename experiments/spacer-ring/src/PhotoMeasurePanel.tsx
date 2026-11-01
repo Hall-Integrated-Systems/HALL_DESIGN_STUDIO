@@ -124,7 +124,7 @@ export default function PhotoMeasurePanel({ onUseEstimate }: Props) {
       {!withinInputRange ? <p className="error">The estimate is outside this dimension’s supported input range.</p> : null}
       <label className="photo-confirm"><input type="checkbox" checked={samePlane} onChange={event => setSamePlane(event.target.checked)} />I reviewed this proposal and checked that the nearby reference is coplanar and parallel to the measured span, with an approximately perpendicular view.</label>
       <button type="button" className="primary" disabled={!samePlane || !withinInputRange} onClick={useEstimate}>Use estimate as dimension input</button>
-      <p className="field-help">This only fills an input and disables the old export. Verify and edit the dimensions before manufacturing, then select Generate &amp; validate to check the geometry. Geometry validation does not validate photo accuracy. The project records the proposal in its provenance note; the image itself is not saved.</p>
+      <p className="field-help">This only fills an input and disables the old export. Verify and edit the dimensions before manufacturing, then select See my ring to check the geometry. Geometry validation does not validate photo accuracy. The project records the proposal in its provenance note; the image itself is not saved.</p>
     </div> : null}
   </section>;
 }
