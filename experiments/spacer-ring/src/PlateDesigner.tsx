@@ -7,6 +7,7 @@ import type { MeasurementUnit } from './unitsAndSize.ts';
 import { guidanceSteps, missingGuidanceAnswers, updateGuidanceAnswer } from './plateGuidance.ts';
 import type { GuidanceAnswers, GuidanceKey } from './plateGuidance.ts';
 import { buildPlateContactSummary } from './plateContact.ts';
+import { sendContact, validateContact } from './contactSend.ts';
 
 const example: PlateDimensions = { outerDiameterMm: 200, innerDiameterMm: 120, thicknessMm: 6, speaker: { count: 4, pitchDiameterMm: 150, holeDiameterMm: 4, rotationDeg: 0 }, vehicle: { count: 4, pitchDiameterMm: 180, holeDiameterMm: 5, rotationDeg: 45 } };
 const speakerSizes = ['3½"', '4"', '5¼"', '6"', '6½"', '6¾"', '8"', '4×6"', '5×7"', '6×8"', '6×9"', 'Custom'];
@@ -42,6 +43,7 @@ export default function PlateDesigner() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactNote, setContactNote] = useState('');
   const [copyStatus, setCopyStatus] = useState('');
+  const [contactSending, setContactSending] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() => ({ outerDiameterMm: '200', innerDiameterMm: '120', thicknessMm: '6', speakerCount: '4', speakerPitch: '150', speakerHole: '4', speakerRotation: '0', vehicleCount: '4', vehiclePitch: '180', vehicleHole: '5', vehicleRotation: '45' }));
   function edit(key: string, value: string, change: (d: PlateDimensions, numeric: number) => PlateDimensions, dimensional = true) {
     setValues(previous => ({ ...previous, [key]: value }));
@@ -98,34 +100,18 @@ export default function PlateDesigner() {
     try { await navigator.clipboard.writeText(contactMessage); setCopyStatus('Project details copied. Paste them into the message on the contact page.'); }
     catch { setCopyStatus('Copy was unavailable. Select and copy the project details below.'); }
   }
-  function openContactForm() {
-    const localUrl = import.meta.env.DEV ? import.meta.env.VITE_PLATE_CONTACT_URL : undefined;
-    const candidate = localUrl ? new URL(localUrl) : new URL('https://hallintegratedsystems.com/contact.html');
-    const isLocal = candidate.protocol === 'http:' && (candidate.hostname === '127.0.0.1' || candidate.hostname === 'localhost');
-    if (localUrl && !isLocal) { setCopyStatus('The contact page is unavailable. Copy the project details instead.'); return; }
-    if (contactMessage.length > 5000) { setCopyStatus('Please shorten your notes before continuing.'); return; }
-    const popup = window.open(candidate.href, '_blank');
-    if (!popup) { setCopyStatus('The contact page could not open. Copy the project details instead.'); return; }
-    setCopyStatus('Opening the contact page. Your details will be ready to review before sending.');
-    let sent = false;
-    const receive = (event: MessageEvent) => {
-      if (event.origin !== candidate.origin || event.source !== popup) return;
-      if (event.data?.type === 'his-plate-contact-ready' && !sent) {
-        sent = true;
-        popup.postMessage({ type: 'his-plate-contact-details', name: contactName, email: contactEmail, message: contactMessage }, candidate.origin);
-      } else if (event.data?.type === 'his-plate-contact-received' && sent) {
-        window.clearTimeout(timeout); window.clearInterval(handshake); window.removeEventListener('message', receive);
-        setCopyStatus('Your details are ready to review on the contact page. Nothing has been sent.');
-      }
-    };
-    window.addEventListener('message', receive);
-    const hello = () => { if (!popup.closed && !sent) popup.postMessage({ type: 'his-plate-contact-hello' }, candidate.origin); };
-    const handshake = window.setInterval(hello, 400);
-    const timeout = window.setTimeout(() => { window.clearInterval(handshake); window.removeEventListener('message', receive); setCopyStatus('The contact page did not confirm the transfer. Copy your project details and paste them into its message instead.'); }, 10000);
-    hello();
+  async function openContactForm() {
+    if (contactSending) return;
+    const details = { name: contactName.trim(), email: contactEmail.trim(), subject: 'Speaker mounting plate inquiry', message: contactMessage };
+    const problem = validateContact(details);
+    if (problem) { setCopyStatus(problem); return; }
+    setContactSending(true); setCopyStatus('Sending your message…');
+    try { await sendContact(details); setCopyStatus('Your message was submitted. Thank you!'); }
+    catch (error) { setCopyStatus(error instanceof Error && error.message === 'uncertain' ? 'We could not confirm whether your message was sent. Please contact us before trying again to avoid a duplicate.' : 'Your message could not be sent. Your details are still here; please try again or use the contact page.'); }
+    finally { setContactSending(false); }
   }
   function contactPreview() {
-    return <div className="contact-preview"><h3>Tell us about your project</h3><p>Your project details are included below. Review them, then continue to the contact page; nothing is sent until you submit there.</p><div className="contact-fields"><label>Name<input type="text" maxLength={120} value={contactName} onChange={e => setContactName(e.target.value)} autoComplete="name" /></label><label>Email<input type="email" maxLength={254} value={contactEmail} onChange={e => setContactEmail(e.target.value)} autoComplete="email" /></label></div><label>Anything else we should know?<textarea rows={3} maxLength={2500} value={contactNote} onChange={e => setContactNote(e.target.value)} /></label><label>Project details<textarea rows={10} value={contactMessage} readOnly /></label><div className="guide-actions"><button type="button" className="primary" onClick={openContactForm}>Continue to contact form</button><button type="button" onClick={copyProjectDetails}>Copy project details</button></div><p role="status">{copyStatus}</p><p>If the automatic transfer is unavailable, copy these details and paste them into the message on Hall’s contact page.</p></div>;
+    return <div className="contact-preview"><h3>Tell us about your project</h3><p>Your project details are included below. Review them, then send your message to us here.</p><div className="contact-fields"><label>Name<input type="text" maxLength={120} value={contactName} onChange={e => setContactName(e.target.value)} autoComplete="name" /></label><label>Email<input type="email" maxLength={254} value={contactEmail} onChange={e => setContactEmail(e.target.value)} autoComplete="email" /></label></div><label>Anything else we should know?<textarea rows={3} maxLength={2500} value={contactNote} onChange={e => setContactNote(e.target.value)} /></label><label>Project details<textarea rows={10} value={contactMessage} readOnly /></label><div className="guide-actions"><button type="button" className="primary" disabled={contactSending} onClick={openContactForm}>{contactSending ? 'Sending…' : 'Send message'}</button><button type="button" onClick={copyProjectDetails}>Copy project details</button></div><p role="status">{copyStatus}</p><p>If you need another way to reach us, copy these details and paste them into the message on Hall’s contact page.</p></div>;
   }
   let previewDimensions: PlateDimensions | null = null;
   try { validatePlateDimensions(dimensions); previewDimensions = dimensions; } catch { /* Show no misleading preview for incomplete values. */ }
