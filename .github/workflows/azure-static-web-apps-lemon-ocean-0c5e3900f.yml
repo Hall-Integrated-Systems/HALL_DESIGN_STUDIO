@@ -52,6 +52,12 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Test guided start
+        run: npm run test:guided-start
+
+      - name: Test plate preview
+        run: node --test experiments/spacer-ring/tests/*.test.mjs
+
       - name: Test Spacer Ring Lab
         run: npm test --prefix experiments/spacer-ring
 
