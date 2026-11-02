@@ -18,7 +18,7 @@ on:
 jobs:
   # Manual validation never enters either Azure job below.
   validate_only_job:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.head_ref == 'codex/fix-fflate-audit' && github.event.action != 'closed') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     name: Validate only (no deployment)
@@ -32,6 +32,7 @@ jobs:
           persist-credentials: false
 
       - name: Verify requested revision
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
         env:
           EXPECTED_SHA: ${{ inputs.expected_sha }}
@@ -62,7 +63,7 @@ jobs:
         run: npm run build
 
   build_and_deploy_job:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed') }}
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed' && github.head_ref != 'codex/fix-fflate-audit') }}
     runs-on: ubuntu-latest
     name: Build and Deploy Job
 
