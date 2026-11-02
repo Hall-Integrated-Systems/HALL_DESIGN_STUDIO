@@ -13,6 +13,8 @@ import type { RingUse } from './RingGuidance.tsx';
 import { formatMeasurement, fromMillimeters, ringBuildSize, toMillimeters } from './unitsAndSize.ts';
 import type { MeasurementUnit } from './unitsAndSize.ts';
 import PlateDesigner from './PlateDesigner.tsx';
+import RingContact from './RingContact.tsx';
+import { buildRingContactSummary } from './ringContact.ts';
 
 const Preview = lazy(() => import('./Preview.tsx'));
 const DEMO_NAME = 'HIS Spacer Ring Demo';
@@ -228,7 +230,7 @@ export default function App({ studioHref }: { studioHref?: string }) {
             <input id={field.key} type="number" min={fromMillimeters(field.min, unit)} max={fromMillimeters(field.max, unit)} step="any" inputMode="decimal" value={displayInputs[field.key]} aria-describedby={`${field.key}-help`} onChange={event => editDimension(field.key, event.target.value)} />
             <p id={`${field.key}-help`} className="field-help">{field.help}</p></div>)}
           <div className="print-size" aria-live="polite"><strong>Our current print size</strong><p>Up to 320 × 320 × 300 mm (about 12.5984 × 12.5984 × 11.811 in) for one part. For a flat ring, outside diameter is its width and depth. The ring designer currently supports thicknesses up to 250 mm (about 9.8425 in). The millimeter limits control this size check.</p>
-            {sizeStatus === 'oversize' ? <p><strong>Outside our one-piece print size.</strong> You can still review or download this design within the designer’s limits. A larger printer or a separately designed multi-piece assembly may be possible after consultation; this tool does not create an assembly. The contact form below is a preview and cannot send yet.</p> : sizeStatus === 'within' ? <p>These overall dimensions are within the stated printer volume. Actual printability, slicer margins, and fit still need review.</p> : <p>Enter an outside diameter and thickness to check the size.</p>}
+            {sizeStatus === 'oversize' ? <p><strong>This design is larger than our current one-piece size.</strong> You can still review it and ask us about options for larger designs.</p> : sizeStatus === 'within' ? <p>Check your measurements and fit before making the final part.</p> : <p>Enter an outside diameter and thickness to check the size.</p>}
           </div>
           {photoFieldFromNote(note) && !artifact ? <p className="notice" role="status">Photo estimate added. Check it with calipers and review all measurements before continuing.</p> : null}
           {error ? <p className="error" role="alert">{error}</p> : null}
@@ -252,10 +254,7 @@ export default function App({ studioHref }: { studioHref?: string }) {
         <p className="field-help">3MF includes millimeter units. STL is another common print-file format; check its scale when opening it.</p>
         {error ? <p className="error" role="alert">{error}</p> : null}
         {lastReport ? <p role="status">Your {lastReport.format.toUpperCase()} {lastDownloadWasReport ? 'report' : 'print file'} was downloaded.</p> : null}
-        <div className="contact-preview" aria-labelledby="contact-preview-title"><h3 id="contact-preview-title">Tell us about your project</h3><p>This contact form is a preview. It cannot send your information yet.</p>
-          <div className="contact-fields"><div><label htmlFor="contact-name">Your name</label><input id="contact-name" autoComplete="name" /></div><div><label htmlFor="contact-email">Email address</label><input id="contact-email" type="email" autoComplete="email" /></div></div>
-          <label htmlFor="contact-message">How can we help?</label><textarea id="contact-message" rows={4} placeholder="Tell us what you’re making or what you need help with." />
-        </div>
+        <RingContact summary={artifact ? buildRingContactSummary({ dimensions: artifact.report.parameters, ringUse, origin, photoEstimate: Boolean(photoFieldFromNote(note)) }) : ''} />
       </section>
       <details className="technical-details"><summary>View technical checks and reports</summary>
         <section className="validation" aria-label="Validation results"><div className="section-heading"><h2>Software geometry checks</h2><span className={artifact ? 'pass' : 'muted'}>{artifact ? 'Passed' : 'Awaiting geometry'}</span></div>
@@ -277,7 +276,6 @@ export default function App({ studioHref }: { studioHref?: string }) {
           {note && artifact ? <p className="provenance-note"><strong>Project input note:</strong> {note}</p> : null}
           <p className="unit-note"><strong>STL</strong> is a common slicer model format and has no declared units. <strong>3MF</strong> declares millimeter units. Import either at 100% scale and check the dimensions. The opening is slightly smaller across polygon flats.</p>
         </section>
-    <footer><strong>2. Fusion and QIDI inspection — separate from software checks</strong><p>Open the exported model in Fusion and QIDI Studio. Check millimeter scale, dimensions, the empty center, orientation, warnings, and sliced layers. These checks are not recorded automatically by the Lab.</p><strong>3. Physical print and fit — separate from software and app checks</strong><p>Measure a test print and check its fit with the mating parts. Record your readings and decision under Check a printed part. A passed geometry check does not establish physical fit or readiness for production.</p></footer>
       </details>
     </div>
     </div>
