@@ -7,6 +7,7 @@ import { RingWorkflow } from './exportWorkflow.ts';
 import type { ExportFormat, ExportReport } from './integrity.ts';
 import type { RingProject } from './project.ts';
 import PhotoMeasurePanel from './PhotoMeasurePanel.tsx';
+import PhotoSetupGuide from './PhotoSetupGuide.tsx';
 import InspectionPanel from './InspectionPanel.tsx';
 import { RingGuidance } from './RingGuidance.tsx';
 import type { RingUse } from './RingGuidance.tsx';
@@ -14,7 +15,9 @@ import { formatMeasurement, fromMillimeters, ringBuildSize, toMillimeters } from
 import type { MeasurementUnit } from './unitsAndSize.ts';
 import PlateDesigner from './PlateDesigner.tsx';
 import RingContact from './RingContact.tsx';
-import { buildRingContactSummary } from './ringContact.ts';
+import type { InquiryMode } from './quoteRequest.ts';
+import { buildPendingRingInquiry, buildReviewedRingInquiry } from './ringPendingInquiry.ts';
+import './RingJourney.css';
 
 const Preview = lazy(() => import('./Preview.tsx'));
 const DEMO_NAME = 'HIS Spacer Ring Demo';
@@ -48,6 +51,9 @@ const labGoals: Array<{ id: Exclude<LabPage, 'start'>; number: string; title: st
   { id: 'inspect', number: '03', title: 'Check a printed part', description: 'Record caliper readings and fit decisions beside the nominal design.', action: 'Open inspection' },
   { id: 'plate', number: '04', title: 'Make a speaker mounting plate', description: 'Connect a round speaker to a round factory opening using two screw patterns.', action: 'Open plate designer' },
 ];
+const labNavigationLabels: Record<Exclude<LabPage, 'start'>, string> = {
+  design: 'Spacer ring', measure: 'Photo estimate', inspect: 'Inspect a print', plate: 'Speaker plate',
+};
 function pageFromLocation(): LabPage {
   const hash = window.location.hash.slice(1);
   return hash === 'design' || hash === 'measure' || hash === 'inspect' || hash === 'plate' ? hash : 'start';
@@ -72,6 +78,11 @@ export default function App({ studioHref }: { studioHref?: string }) {
   const [page, setPage] = useState<LabPage>(pageFromLocation);
   const [ringUse, setRingUse] = useState<RingUse>('');
   const [designStep, setDesignStep] = useState<1 | 2 | 3>(1);
+  const [ringHelpOpen, setRingHelpOpen] = useState(false);
+  const [ringInquiryMode, setRingInquiryMode] = useState<InquiryMode>('help');
+  const [ringHelpRequest, setRingHelpRequest] = useState(0);
+  const ringHelpRef = useRef<HTMLElement>(null);
+  const ringAskRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const syncPage = () => setPage(pageFromLocation());
@@ -80,6 +91,15 @@ export default function App({ studioHref }: { studioHref?: string }) {
     return () => { window.removeEventListener('popstate', syncPage); window.removeEventListener('hashchange', syncPage); };
   }, []);
 
+  useEffect(() => {
+    if (!ringHelpRequest) return;
+    const target = ringHelpRef.current;
+    if (!target) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    target.focus({ preventScroll: true });
+  }, [ringHelpRequest]);
+
   function openPage(next: LabPage) {
     if (next !== page) {
       const hash = next === 'start' ? '' : `#${next}`;
@@ -87,6 +107,17 @@ export default function App({ studioHref }: { studioHref?: string }) {
       setPage(next);
     }
     window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  function askRingHelp() {
+    setRingInquiryMode('help');
+    setRingHelpOpen(true);
+    setRingHelpRequest(previous => previous + 1);
+  }
+  function askRingQuote() {
+    setRingInquiryMode('quote');
+    setRingHelpOpen(true);
+    setRingHelpRequest(previous => previous + 1);
   }
 
   function editDimension(key: keyof RingDimensions, value: string) {
@@ -200,14 +231,17 @@ export default function App({ studioHref }: { studioHref?: string }) {
     innerDiameterMm: inputs.innerDiameterMm.trim() ? Number(inputs.innerDiameterMm) : NaN,
     thicknessMm: inputs.thicknessMm.trim() ? Number(inputs.thicknessMm) : NaN,
   });
+  const ringInquirySummary = artifact
+    ? buildReviewedRingInquiry({ dimensions: artifact.report.parameters, ringUse, origin, photoEstimate: Boolean(photoFieldFromNote(note)) })
+    : buildPendingRingInquiry({ inputs, ringUse, origin, photoEstimate: Boolean(photoFieldFromNote(note)) });
   return <main>
-    <header><div>{studioHref && <a className="lab-studio-link" href={studioHref}>← Hall Design Studio</a>}<h1>Spacer Ring Lab</h1><p>Hall Integrated Systems · From first dimensions to printed-part inspection</p></div><span className="experiment">{studioHref ? 'Geometry Lab' : 'Isolated experiment'}</span></header>
+    <header><div>{studioHref && <div className="lab-return-context"><a className="lab-studio-link" href={studioHref}>← Hall Design Studio</a><p className="lab-return-guidance">Already working on a scene? Return to the original Studio tab to keep working on it.</p></div>}<h1>HIS Geometry Lab</h1><p>Hall Integrated Systems · From first dimensions to printed-part inspection</p></div><span className="experiment">{studioHref ? 'Geometry Lab' : 'Isolated experiment'}</span></header>
     {page === 'start' ? <section className="lab-start" aria-labelledby="lab-question">
       <div className="lab-intro"><span className="lab-kicker">GEOMETRY LAB / GET STARTED</span><h2 id="lab-question">What would you like to do?</h2><p>Choose your goal. We’ll bring forward the tools and next steps that fit it.</p><span className="lab-intro-line">From measurements to a design you can inspect.</span></div>
       <div className="lab-art" aria-hidden="true"><div className="lab-art-ring"><span /></div><div className="lab-art-caption">OD / ID / H <span>→</span> MODEL <span>→</span> PART</div></div>
       <div className="lab-goals">{labGoals.map(goal => <button type="button" className="lab-goal" key={goal.id} onClick={() => openPage(goal.id)}><span className="lab-goal-number">{goal.number}</span><span className="lab-goal-title">{goal.title}</span><span className="lab-goal-description">{goal.description}</span><span className="lab-goal-action">{goal.action} <span aria-hidden="true">↗</span></span></button>)}</div>
     </section> : <>
-      <nav className="lab-navigation" aria-label="Geometry Lab goals"><button type="button" className="lab-back" onClick={() => openPage('start')}>← All goals</button>{labGoals.map(goal => <button type="button" key={goal.id} aria-current={page === goal.id ? 'page' : undefined} onClick={() => openPage(goal.id)}>{goal.title}</button>)}</nav>
+      <nav className="lab-navigation" aria-label="Geometry Lab goals"><button type="button" className="lab-back" onClick={() => openPage('start')}>← All goals</button>{labGoals.map(goal => <button type="button" key={goal.id} aria-label={goal.title} aria-current={page === goal.id ? 'page' : undefined} onClick={() => openPage(goal.id)}>{labNavigationLabels[goal.id]}</button>)}</nav>
     </>}
     <div className="lab-page" hidden={page !== 'design'}>
       <div className="lab-page-heading"><span className="lab-kicker">LET’S MAKE YOUR RING</span><h2>Bring your idea to life</h2><p>Tell us what you need, enter your measurements, and see your ring take shape.</p></div>
@@ -216,7 +250,13 @@ export default function App({ studioHref }: { studioHref?: string }) {
         <button type="button" aria-current={designStep === 2 ? 'step' : undefined} onClick={() => setDesignStep(2)}>2. Measurements</button>
         <button type="button" aria-current={designStep === 3 ? 'step' : undefined} disabled={!artifact} onClick={() => setDesignStep(3)}>3. Review &amp; next steps</button>
       </nav>
-      {origin === 'demo' ? <div className="notice"><strong>Starting with an example.</strong> Replace the example measurements with measurements from your own parts before using the design.</div> : null}
+      {designStep !== 3 && <div className="ring-support-callout">
+        <div><strong>Not sure what to measure?</strong><p>Tell HIS about your project now. You can ask even if some measurements are missing.</p></div>
+        <button type="button" ref={ringAskRef} onClick={askRingHelp} aria-controls="ring-help" aria-expanded={ringHelpOpen}>Ask HIS for help</button>
+      </div>}
+      {origin === 'demo'
+        ? <div className="notice"><strong>Starting with an example.</strong> Replace the example measurements with measurements from your own parts before using the design.</div>
+        : <div className="notice"><strong>Verify every measurement.</strong> Some starting examples may remain after editing. Check every value against your actual parts before using the design.</div>}
     <div hidden={designStep !== 1}><RingGuidance kind={ringUse} onKindChange={setRingUse} /><button className="primary step-next" type="button" onClick={() => setDesignStep(2)}>Continue to measurements</button></div>
     <div className="workbench" hidden={designStep !== 2}>
       <section className="dimensions"><h2>Dimensions</h2>
@@ -244,17 +284,18 @@ export default function App({ studioHref }: { studioHref?: string }) {
       <div className="workspace">{page === 'design' && designStep === 2 ? <Suspense fallback={<div className="preview"><p className="empty">Loading preview…</p></div>}><Preview artifact={artifact} /></Suspense> : null}</div>
     </div>
     <div className="design-review" hidden={designStep !== 3}>
-      <div className="review-intro"><h2>Your ring is ready to review</h2><p>Here’s the shape based on the measurements you entered. Check the size and fit before making a final part.</p>{origin === 'demo' ? <p><strong>Example measurements:</strong> change them to match your own parts.</p> : null}</div>
+      <div className="review-intro"><span className="ring-design-status">{origin === 'demo' ? 'Example design' : 'Design preview'}</span><h2>Your ring is ready to review</h2><p>Here is the shape based on the current dimensions. Confirm every measurement and check fit against your actual parts before making a final part.</p>{origin === 'demo' ? <p><strong>Example measurements:</strong> change them to match your own parts.</p> : <p>Some fields may still contain starting examples. Review each one against your parts.</p>}</div>
       {page === 'design' && designStep === 3 ? <Suspense fallback={<div className="preview"><p className="empty">Loading preview…</p></div>}><Preview artifact={artifact} /></Suspense> : null}
       {artifact ? <p className="review-dimensions"><strong>Your measurements:</strong> {formatMeasurement(artifact.report.parameters.outerDiameterMm, unit)} {unit} outside · {formatMeasurement(artifact.report.parameters.innerDiameterMm, unit)} {unit} opening · {formatMeasurement(artifact.report.parameters.thicknessMm, unit)} {unit} thick</p> : null}
       <p className="print-size" role="status">{sizeStatus === 'oversize' ? 'This ring is larger than our 320 × 320 × 300 mm one-piece printer volume. Consult us about options; multi-piece assembly is not generated here.' : 'The overall size is within our 320 × 320 × 300 mm printer volume. Slicer checks and physical fit are still needed.'}</p>
       <button type="button" onClick={() => setDesignStep(2)}>Change measurements</button>
-      <section className="next-steps"><h2>What would you like to do next?</h2><p>Download a file for a 3D printer, or contact us about your project.</p>
-        <div className="exports"><button className="primary" disabled={!artifact || !!busy} onClick={() => void exportFormat('3mf', false)}>Download print file (.3mf)</button><button disabled={!artifact || !!busy} onClick={() => void exportFormat('stl', false)}>Download print file (.stl)</button><button disabled={!artifact} onClick={saveProject}>Save editable project</button></div>
-        <p className="field-help">3MF includes millimeter units. STL is another common print-file format; check its scale when opening it.</p>
+      <section className="next-steps"><h2>Get a quote for your ring</h2><p>Tell us how many you need and any material preference. HIS will review your design and confirm a price with you.</p>
+        <div className="quote-actions"><button type="button" className="primary quote-action" disabled={!artifact} onClick={askRingQuote} aria-controls="ring-help">Request a quote</button>
+        <button type="button" className="ring-review-help" onClick={askRingHelp} aria-controls="ring-help">Ask HIS about this ring</button></div>
+        <details className="technical-downloads"><summary>Download design files</summary><p>For inspecting or printing the model yourself. 3MF includes millimeter units. STL is another common print-file format; check its scale when opening it.</p>
+        <div className="exports"><button disabled={!artifact || !!busy} onClick={() => void exportFormat('3mf', false)}>Download print file (.3mf)</button><button disabled={!artifact || !!busy} onClick={() => void exportFormat('stl', false)}>Download print file (.stl)</button><button disabled={!artifact} onClick={saveProject}>Save editable project</button></div></details>
         {error ? <p className="error" role="alert">{error}</p> : null}
         {lastReport ? <p role="status">Your {lastReport.format.toUpperCase()} {lastDownloadWasReport ? 'report' : 'print file'} was downloaded.</p> : null}
-        <RingContact summary={artifact ? buildRingContactSummary({ dimensions: artifact.report.parameters, ringUse, origin, photoEstimate: Boolean(photoFieldFromNote(note)) }) : ''} />
       </section>
       <details className="technical-details"><summary>View technical checks and reports</summary>
         <section className="validation" aria-label="Validation results"><div className="section-heading"><h2>Software geometry checks</h2><span className={artifact ? 'pass' : 'muted'}>{artifact ? 'Passed' : 'Awaiting geometry'}</span></div>
@@ -278,8 +319,12 @@ export default function App({ studioHref }: { studioHref?: string }) {
         </section>
       </details>
     </div>
+    <section id="ring-help" className="ring-help-section" ref={ringHelpRef} tabIndex={-1} aria-label={ringInquiryMode === 'quote' ? 'Request a quote for your ring' : 'Ask HIS about your ring'} hidden={!ringHelpOpen}>
+      <RingContact summary={ringInquirySummary} mode={ringInquiryMode} />
+      {designStep !== 3 && <button type="button" className="ring-hide-help" onClick={() => { setRingHelpOpen(false); ringAskRef.current?.focus(); }}>Hide help form</button>}
+    </section>
     </div>
-    <div className="lab-page" hidden={page !== 'measure'}><div className="lab-page-heading"><span className="lab-kicker">02 / MEASURE</span><h2>Start with a photo</h2><p>Mark a known reference and the dimension you want. Review the proposal, then move it into the ring designer.</p></div><PhotoMeasurePanel onUseEstimate={usePhotoEstimate} /></div>
+    <div className="lab-page" hidden={page !== 'measure'}><div className="lab-page-heading"><span className="lab-kicker">02 / MEASURE</span><h2>Start with a photo</h2><p>Mark a known reference and the dimension you want. Review the proposal, then move it into the ring designer.</p></div><PhotoSetupGuide /><PhotoMeasurePanel onUseEstimate={usePhotoEstimate} /></div>
     <div className="lab-page" hidden={page !== 'plate'}><PlateDesigner /></div>
     <div className="lab-page" hidden={page !== 'inspect'}><div className="lab-page-heading"><span className="lab-kicker">03 / INSPECT</span><h2>Compare the print with the design</h2><p>Load the matching ring project or a prior inspection, then record your physical readings and fit decision.</p></div><div className="lab-inspection-context"><div><strong>Current nominal project</strong><p>{artifact ? `${workflow.project.name} · Ø${f(workflow.project.dimensions.outerDiameterMm)} / Ø${f(workflow.project.dimensions.innerDiameterMm)} / ${f(workflow.project.dimensions.thicknessMm)} mm${origin === 'demo' ? ' · demo dimensions' : ''}` : 'No validated ring is available. Load a project or generate a ring first.'}</p></div><button type="button" onClick={() => fileInput.current?.click()}>Load matching ring project</button></div><InspectionPanel source={artifact ? workflow.project : null} /></div>
     <input ref={fileInput} className="file-input" type="file" accept=".his-ring.json,application/json" aria-label="Choose dimension project JSON" onChange={loadProject} />

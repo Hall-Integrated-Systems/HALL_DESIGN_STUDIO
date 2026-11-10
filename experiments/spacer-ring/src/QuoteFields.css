@@ -1,0 +1,9 @@
+.quote-fields { margin: 18px 0; }
+.quote-fields .contact-fields { margin: 0 0 16px; }
+.quote-fields textarea { margin-top: 0; }
+.quote-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.quote-actions .ring-review-help { margin-top: 0; }
+.technical-downloads { margin-top: 20px; border-top: 1px solid #39546c; }
+.technical-downloads summary { padding: 14px 0; color: #a6cae9; cursor: pointer; font-weight: bold; }
+.technical-downloads summary:focus-visible { outline: 2px solid #a5cefa; outline-offset: 3px; }
+@media (max-width: 650px) { .quote-action { width: 100%; } }

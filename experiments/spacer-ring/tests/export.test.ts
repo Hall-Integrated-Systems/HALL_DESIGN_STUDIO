@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { createArtifact } from '../src/export.ts';
 import { generateRing } from '../src/geometry.ts';
+import { createThreeMfArtifact } from '../src/threeMf.ts';
 import { readBinaryStl, validateRing } from '../src/validation.ts';
 
 const d = { outerDiameterMm: 180, innerDiameterMm: 145, thicknessMm: 12 };
@@ -46,6 +48,22 @@ test('export is deterministic for the same dimensions', () => {
   const a = createArtifact(d), b = createArtifact(d);
   assert.ok(a.bytes.length > 84);
   assert.deepEqual(a.bytes, b.bytes);
+});
+
+test('filenames use clean millimeter values without changing precise dimensions or file bytes', () => {
+  const noisy = { outerDiameterMm: 180, innerDiameterMm: 145, thicknessMm: 3 * 25.4 };
+  assert.equal(noisy.thicknessMm, 76.19999999999999);
+  const artifact = createArtifact(noisy);
+  const threeMf = createThreeMfArtifact(artifact, 'Filename regression example');
+  assert.equal(artifact.baseName, 'HIS_spacer_DEMO_OD180_ID145_H76.2_mm');
+  assert.equal(threeMf.baseName, artifact.baseName);
+  assert.equal(artifact.report.parameters.thicknessMm, noisy.thicknessMm);
+  assert.ok(artifact.mesh.vertices.some(vertex => vertex[2] === noisy.thicknessMm));
+  // These hashes capture the files before the filename-only formatting change.
+  const sha256 = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+  assert.equal(sha256(artifact.bytes), '38c289eea460724e80a3e9b471c37b2fc4a4ba0513af6856f3a2d235ce282421');
+  assert.equal(sha256(threeMf.bytes), '9f4ad589df3725d2776d5d39a6b76f9842ab2685c7d4fcd748ff5b1c4200f5db');
+  assert.equal(createArtifact(d).baseName, 'HIS_spacer_DEMO_OD180_ID145_H12_mm');
 });
 
 test('detects missing, reversed, duplicate and degenerate faces', () => {

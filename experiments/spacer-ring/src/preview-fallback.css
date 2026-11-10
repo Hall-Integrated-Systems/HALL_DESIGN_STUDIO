@@ -1,0 +1,61 @@
+.ring-preview-fallback {
+  height: 100%;
+  min-width: 0;
+  padding: 48px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  overflow: auto;
+  color: #d9e8f6;
+  text-align: center;
+}
+
+.ring-preview-fallback-message,
+.ring-preview-fallback-dimensions {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ring-preview-fallback svg {
+  width: min(170px, 55%);
+  max-height: 40%;
+  flex: 0 1 auto;
+}
+
+.ring-preview-fallback-outer {
+  fill: #78a7d8;
+  stroke: #c8e4fc;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ring-preview-fallback-opening {
+  fill: #0b0f14;
+  stroke: #c8e4fc;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ring-preview-fallback button {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.ring-preview-starting {
+  position: absolute;
+  inset: 48px 16px 32px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: #b5c5d6;
+  background: #0b0f14;
+  pointer-events: none;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+}

@@ -3,6 +3,7 @@ import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import { DIMENSION_TOLERANCE_MM, generateRing, MAX_CHORD_ERROR_MM, segmentCount } from './geometry.ts';
 import type { MeshData, RingDimensions } from './geometry.ts';
 import { readBinaryStl, validateRing } from './validation.ts';
+import { formatMeasurement } from './unitsAndSize.ts';
 
 export function toBufferGeometry(mesh: MeshData): BufferGeometry {
   const geometry = new BufferGeometry();
@@ -34,7 +35,7 @@ export function createArtifact(dimensions: RingDimensions) {
     const actual = decoded.vertices[decoded.triangles[i][j]];
     if (actual.some((x, axis) => x !== Math.fround(mesh.vertices[v][axis]))) throw new Error('STL round-trip vertex mismatch.');
   }));
-  const baseName = `HIS_spacer_DEMO_OD${parameters.outerDiameterMm}_ID${parameters.innerDiameterMm}_H${parameters.thicknessMm}_mm`;
+  const baseName = `HIS_spacer_DEMO_OD${formatMeasurement(parameters.outerDiameterMm, 'mm')}_ID${formatMeasurement(parameters.innerDiameterMm, 'mm')}_H${formatMeasurement(parameters.thicknessMm, 'mm')}_mm`;
   return { mesh, bytes, baseName, report: {
     schemaVersion: 1, generator: 'HIS isolated spacer-ring POC v0.1.0', units: 'mm',
     parameters, segments: segmentCount(parameters), numericalToleranceMm: DIMENSION_TOLERANCE_MM,

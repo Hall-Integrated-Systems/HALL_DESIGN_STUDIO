@@ -18,7 +18,7 @@ on:
 jobs:
   # Manual validation never enters either Azure job below.
   validate_only_job:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.head_ref == 'codex/fix-fflate-audit' && github.event.action != 'closed') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.head_ref == 'codex/fix-fflate-audit' || (github.head_ref == 'codex/studio-release-review' && github.event.pull_request.head.repo.full_name == github.repository)) && github.event.action != 'closed') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     name: Validate only (no deployment)
@@ -56,6 +56,14 @@ jobs:
       - name: Test Spacer Ring Lab
         run: npm test --prefix experiments/spacer-ring
 
+      - name: Test Studio UI and graphics
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/studio-release-review') || (github.event_name == 'pull_request' && github.head_ref == 'codex/studio-release-review' && github.event.pull_request.head.repo.full_name == github.repository) }}
+        run: node --test tests/*.test.ts tests/*.test.mjs
+
+      - name: Test Lab components
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/studio-release-review') || (github.event_name == 'pull_request' && github.head_ref == 'codex/studio-release-review' && github.event.pull_request.head.repo.full_name == github.repository) }}
+        run: node --test experiments/spacer-ring/tests/*.test.mjs
+
       - name: Build Spacer Ring Lab
         run: npm run build --prefix experiments/spacer-ring
 
@@ -63,7 +71,7 @@ jobs:
         run: npm run build
 
   build_and_deploy_job:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed' && github.head_ref != 'codex/fix-fflate-audit') }}
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed' && github.head_ref != 'codex/fix-fflate-audit' && (github.head_ref != 'codex/studio-release-review' || github.event.pull_request.head.repo.full_name != github.repository)) }}
     runs-on: ubuntu-latest
     name: Build and Deploy Job
 
@@ -97,7 +105,7 @@ jobs:
           skip_app_build: true
 
   close_pull_request_job:
-    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && (github.head_ref != 'codex/studio-release-review' || github.event.pull_request.head.repo.full_name != github.repository) }}
     runs-on: ubuntu-latest
     name: Close Pull Request Job
 
