@@ -12,14 +12,18 @@ after(async () => { await server?.close(); });
 const render = (goal = null, pendingTemplateId = null) => renderToStaticMarkup(React.createElement(StudioWelcome, { goal, pendingTemplateId, projectTitle: 'My scene', onChooseGoal() {}, onBack() {}, onOpenWorkspace() {}, onStartTemplate() {}, onCancelTemplate() {}, onConfirmTemplate() {} }));
 test('start shows both part designers and keeps visualization options in a closed disclosure', () => {
   const html = render();
-  assert.match(html, /Create a 3D-printable part/);
+  assert.match(html, /Speaker mounting plate/);
+  assert.match(html, /Spacer ring/);
   assert.match(html, /href="spacer-ring\/#design"/);
   assert.match(html, /href="spacer-ring\/#plate"/);
   assert.match(html, /<details class="studio-visualization"/);
-  assert.doesNotMatch(html, /Create a brand visual/);
+  const disclosure = html.indexOf('<details class="studio-visualization"');
+  assert.ok(disclosure > 0, 'the secondary visualization choices should be grouped in a disclosure');
+  assert.doesNotMatch(html.slice(0, disclosure), /Create a brand visual/);
+  assert.match(html.slice(disclosure), /Create a brand visual/);
   assert.match(html, /do not create printable geometry/);
   assert.ok(html.indexOf('Spacer ring') < html.indexOf('Visualization workspace'));
-  assert.match(html, /round speaker mounting plate/i);
+  assert.match(html, /round speaker to a round opening/i);
 });
 test('existing goal links still resolve and retain their templates', () => {
   for (const id of ['product', 'brand', 'concept', 'part', 'explore']) {

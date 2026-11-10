@@ -1,0 +1,51 @@
+.plate-help-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  border: 1px solid #3d6e8c;
+  border-radius: 8px;
+  background: #122a3a;
+  font-family: Arial, sans-serif;
+}
+
+.plate-help-shortcut strong { color: #f0f8ff; }
+.plate-help-shortcut p { margin: 5px 0 0; color: #c7dce9; font-size: 13px; line-height: 1.45; }
+.plate-help-shortcut button { flex: 0 0 auto; border-color: #83bfe5; background: #20445d; font-weight: 700; }
+.plate-help-shortcut button:hover { background: #2e5872; }
+
+.plate-review-status {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-left: 3px solid #f2c46d;
+  background: #2d291b;
+  color: #f5e7c8;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.plate-inquiry {
+  margin: 24px 0;
+  padding: 22px;
+  border: 1px solid #39546c;
+  border-radius: 8px;
+  background: #12202d;
+  scroll-margin-top: 18px;
+}
+.plate-inquiry:focus-visible { outline: 2px solid #a5cefa; outline-offset: 3px; }
+.plate-inquiry .contact-preview { margin: 0; padding: 0; border: 0; }
+.plate-inquiry .plate-contact-field { display: block; margin-top: 16px; }
+
+/* The hole groups also differ by line style, independent of their colors. */
+.plate-designer .speaker-hole { stroke-dasharray: none; }
+.plate-designer .vehicle-hole { stroke-dasharray: 2 1.4; }
+.plate-designer .speaker-pitch { stroke-dasharray: 3 3; }
+.plate-designer .vehicle-pitch { stroke-dasharray: 1 2; }
+
+@media (max-width: 650px) {
+  .plate-help-shortcut { align-items: stretch; flex-direction: column; }
+  .plate-help-shortcut button { width: 100%; }
+  .plate-inquiry { padding: 18px; }
+}

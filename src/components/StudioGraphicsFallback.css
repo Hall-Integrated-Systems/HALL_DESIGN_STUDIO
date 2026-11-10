@@ -1,0 +1,48 @@
+.studio-graphics-fallback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(440px, calc(100% - 48px));
+  padding: 24px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #4f7694;
+  border-radius: 10px;
+  background: #112638;
+  color: #eaf5ff;
+  font-family: Arial, sans-serif;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.studio-graphics-fallback h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.studio-graphics-fallback p {
+  margin: 8px 0 0;
+  color: #c3d7e8;
+  font-size: 14px;
+}
+
+.studio-graphics-fallback button {
+  margin-top: 16px;
+  padding: 9px 14px;
+  border: 1px solid #8bb9db;
+  border-radius: 6px;
+  background: #24567b;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.studio-graphics-starting {
+  position: absolute;
+  inset: 12px auto auto 12px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #112638;
+  color: #eaf5ff;
+  font: 14px Arial, sans-serif;
+}

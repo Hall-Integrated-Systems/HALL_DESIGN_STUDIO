@@ -1,0 +1,61 @@
+.lab-return-context .lab-studio-link { margin-bottom: 5px; }
+.lab-return-context .lab-return-guidance { max-width: 550px; margin: 0 0 12px; color: #b8ccda; font-size: 12px; line-height: 1.45; }
+
+.lab-page .ring-support-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin: 0 0 20px;
+  padding: 15px 18px;
+  border: 1px solid #296879;
+  border-radius: 10px;
+  background: linear-gradient(110deg, #12343f, #112432);
+}
+
+.ring-support-callout strong { color: #eafcff; font-size: 15px; }
+.ring-support-callout p { margin: 5px 0 0; color: #bed6dc; font-size: 13px; line-height: 1.5; }
+.ring-support-callout button,
+.ring-review-help { border-color: #74d5da; color: #e4fcff; background: #155464; font-weight: 700; }
+.ring-support-callout button:hover,
+.ring-review-help:hover { border-color: #a8f0ec; background: #1d6c78; }
+.ring-review-help { margin-top: 16px; }
+.ring-design-status { display: inline-block; margin-bottom: 10px; padding: 5px 9px; border: 1px solid #b49450; border-radius: 999px; color: #ffe3a4; background: #322817; font-size: 12px; font-weight: 700; }
+.lab-page .ring-help-section { margin: 20px 0 28px; padding: 20px; border: 1px solid #39546c; border-radius: 10px; background: #12202d; scroll-margin-top: 18px; }
+.ring-help-section:focus { outline: 2px solid #a5cefa; outline-offset: 3px; }
+.ring-help-section .contact-preview { margin: 0; padding: 0; border: 0; }
+.ring-hide-help { margin-top: 12px; }
+
+.photo-setup-guide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 340px);
+  align-items: center;
+  gap: 20px;
+  margin: 0 0 20px;
+  padding: 22px;
+  border: 1px solid #39637d;
+  border-radius: 10px;
+  background: linear-gradient(115deg, #132e40, #101d2a);
+}
+.photo-setup-kicker { color: #8ce2ea; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.photo-setup-guide h3 { margin: 8px 0; color: #f4f9fc; font-size: 20px; }
+.photo-setup-guide p { max-width: 650px; margin: 8px 0 0; color: #c7dbe6; font-size: 14px; line-height: 1.55; }
+.photo-setup-guide .photo-setup-note { color: #abc1d0; font-size: 12px; }
+.photo-setup-guide svg { display: block; width: 100%; max-width: 340px; }
+.photo-setup-guide svg text { fill: #d8efff; font: bold 10px Arial, sans-serif; letter-spacing: .06em; }
+.photo-setup-surface { fill: #0d1b28; stroke: #38576c; }
+.photo-setup-ring { fill: #24618b; stroke: #9ed9f5; stroke-width: 2; }
+.photo-setup-opening { fill: #0d1b28; stroke: #9ed9f5; stroke-width: 2; }
+.photo-setup-target { fill: none; stroke: #a6eaf0; stroke-width: 2; }
+.photo-setup-ruler { fill: #f6cc73; }
+.photo-setup-ruler-ticks { stroke: #384355; stroke-width: 1; }
+.photo-setup-reference-line { fill: none; stroke: #f6cc73; stroke-width: 2; }
+
+@media (max-width: 650px) {
+  main > .lab-navigation { flex-wrap: wrap; overflow-x: visible; }
+  main > .lab-navigation button { white-space: normal; }
+  .ring-support-callout button, .ring-review-help { width: 100%; }
+  .photo-setup-guide { grid-template-columns: 1fr; padding: 18px; }
+  .photo-setup-guide svg { max-width: 290px; }
+}

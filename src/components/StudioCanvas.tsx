@@ -1,9 +1,10 @@
 import { Grid, Html, OrbitControls, Text, useGLTF } from '@react-three/drei';
 import { Canvas, ThreeEvent, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { GLProps, RootState } from '@react-three/fiber';
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Mesh, MeshStandardMaterial, Object3D, Quaternion } from 'three';
-import { Box3, Box3Helper, Color, DoubleSide, FrontSide, Group, TextureLoader, Vector2, Vector3 } from 'three';
+import { Box3, Box3Helper, Color, DoubleSide, FrontSide, Group, TextureLoader, Vector2, Vector3, WebGLRenderer } from 'three';
 import { GroupTransformControls, ObjectTransformControls } from './ObjectTransformControls';
 import { TransformToolbar } from './TransformToolbar';
 import { useStudioStore } from '../state/studioStore';
@@ -20,13 +21,69 @@ import type {
 } from '../types/studioTypes';
 import { downloadDataUrl, getScreenshotDimensions } from '../utils/exportScreenshot';
 import { trackClarityEvent } from '../utils/clarity';
+import { studioHasWebGL2 } from '../utils/studioGraphics';
+import './StudioGraphicsFallback.css';
+
+type RendererFactory = Extract<GLProps, (...args: never[]) => unknown>;
+type RendererOptions = Parameters<RendererFactory>[0];
+
+function StudioGraphicsFallback({ onRetry }: { onRetry?: () => void }) {
+  return <div className="studio-graphics-fallback" role="status">
+    <h2>3D workspace unavailable</h2>
+    <p>The 3D staging view could not be displayed. Retry, or try another browser or device with WebGL enabled.</p>
+    <p>The project controls remain available so you can save your project or export a JSON backup.</p>
+    {onRetry && <button type="button" onClick={onRetry}>Retry 3D workspace</button>}
+  </div>;
+}
+
+class StudioGraphicsBoundary extends Component<{ children: ReactNode; onFailure: () => void }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch() { this.props.onFailure(); }
+  render() { return this.state.failed ? <StudioGraphicsFallback /> : this.props.children; }
+}
 
 export function StudioCanvas({ onCanvasPointerDown }: { onCanvasPointerDown?: () => void }) {
+  const [graphics, setGraphics] = useState<'starting' | 'ready' | 'unavailable'>(() => studioHasWebGL2() ? 'starting' : 'unavailable');
+  const [retry, setRetry] = useState(0);
+  const removeContextListener = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    if (graphics !== 'starting') return;
+    const timer = window.setTimeout(() => setGraphics(current => current === 'starting' ? 'unavailable' : current), 8000);
+    return () => window.clearTimeout(timer);
+  }, [graphics]);
+  useEffect(() => {
+    if (graphics === 'unavailable') removeContextListener.current();
+  }, [graphics]);
+  useEffect(() => () => removeContextListener.current(), []);
+
+  const createRenderer = useCallback((options: RendererOptions) => {
+    try {
+      return new WebGLRenderer({ ...options, canvas: options.canvas as HTMLCanvasElement, preserveDrawingBuffer: true, antialias: true, alpha: true });
+    } catch (error) {
+      // R3F creates its renderer asynchronously; a React boundary alone cannot catch this failure.
+      queueMicrotask(() => setGraphics(current => current === 'starting' ? 'unavailable' : current));
+      throw error;
+    }
+  }, []);
+  const onCreated = useCallback((state: RootState) => {
+    removeContextListener.current();
+    const canvas = state.gl.domElement;
+    const onContextLost = () => setGraphics('unavailable');
+    canvas.addEventListener('webglcontextlost', onContextLost);
+    removeContextListener.current = () => canvas.removeEventListener('webglcontextlost', onContextLost);
+    setGraphics(current => current === 'starting' ? 'ready' : current);
+  }, []);
+  const retryGraphics = () => {
+    setRetry(value => value + 1);
+    setGraphics(studioHasWebGL2() ? 'starting' : 'unavailable');
+  };
   return (
     <section className="canvas-stage" onPointerDownCapture={onCanvasPointerDown}>
-      <Canvas camera={{ position: [4, 3, 6], fov: 45 }} gl={{ preserveDrawingBuffer: true, antialias: true, alpha: true }} shadows>
+      {graphics !== 'unavailable' ? <StudioGraphicsBoundary key={retry} onFailure={() => setGraphics('unavailable')}><Canvas fallback={<StudioGraphicsFallback onRetry={retryGraphics} />} camera={{ position: [4, 3, 6], fov: 45 }} gl={createRenderer} onCreated={onCreated} shadows>
         <StudioScene />
-      </Canvas>
+      </Canvas>{graphics === 'starting' && <p className="studio-graphics-starting" role="status">Starting 3D workspace.</p>}</StudioGraphicsBoundary> : <StudioGraphicsFallback onRetry={retryGraphics} />}
     </section>
   );
 }
